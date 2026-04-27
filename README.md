@@ -7,7 +7,7 @@
 
 ##  Integrantes do Grupo
 * David Fernando de Melo - david.fmelo@ufrpe.br
-* Evelin Paula Dionizio da Silva - 
+* Evelin Paula Dionizio da Silva - evelin.dionizio@ufrpe.br
 * Giovanna Costa da Silva - giovanna.costa@ufrpe.br
 * Miguel Monteiro Alves Paes - miguel.alves@ufrpe.br
 
