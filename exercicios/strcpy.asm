@@ -3,7 +3,7 @@
 # ATIVIDADE: Projeto 01 - 1ª VA 
 # DISCIPLINA: Arquitetura e Organização de Computadores 
 # SEMESTRE: 2026.1 
-# QUESTÃO:  Função strcpy 
+# QUESTÃO: Função strcpy 
 # DESCRIÇÃO: 
 ######################################################################################
 
