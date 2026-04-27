@@ -1,6 +1,8 @@
 # Projeto 01 - Assembly MIPS e Simulador MARS
 **Disciplina:** Arquitetura e Organização de Computadores (2026.1) 
+
 **Instituição:** Universidade Federal Rural de Pernambuco (UFRPE) 
+
 **Professor:** Vítor A. Coutinho 
 
 ##  Integrantes do Grupo
