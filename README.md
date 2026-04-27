@@ -12,7 +12,7 @@
 * Nome do Integrante 4
 
 ##  Estrutura do Repositório
-O projeto está organizado da seguinte forma para facilitar a correção:
+O projeto está organizado da seguinte forma:
 
 
 
