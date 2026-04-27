@@ -34,12 +34,24 @@ O projeto principal consiste em um sistema robusto para restaurantes, operado at
 
 ##  Estrutura do Repositório
 O projeto está organizado da seguinte forma:
+* **`/exercicios`**: Contém a implementação das funções da biblioteca `string.h` e o código de teste.
+    * `strcpy.asm`, `memcpy.asm`, `strcmp.asm`, `strncmp.asm`, `strcat.asm`: Implementações individuais de cada função.
+    * `main_testes.asm`: Código principal para validação das funções de string.
+* **`/mmio_echo`**: Contém o desafio de entrada e saída mapeada em memória.
+    * `echo_mmio.asm`: Implementação do processo de Echo (Teclado/Display) sem uso de syscalls.
+* **`/projeto_restaurante`**: Pasta do sistema principal de gestão.
+    * `main.asm`: Ponto de entrada do programa e loop do Shell.
+    * `comandos.asm`: Lógica de interpretação dos comandos.
+    * `dados.asm`: Definição das estruturas de dados para cardápio e mesas.
+    * `arquivos.asm`: Funções para salvar e recarregar dados em arquivos externos.
 
+
+##  Requisitos Implementados (Projeto Principal)
 
 
 ##  Como Executar
 
 
-##  Requisitos Implementados (Projeto Principal)
+
 
 
