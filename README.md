@@ -31,6 +31,7 @@ O projeto principal consiste em um sistema robusto para restaurantes, operado at
 * **Persistência de Dados**: Salvamento e recuperação automática de informações através de arquivos externos.
 * **Interface Shell**: Banner personalizado no formato `<nome-shell>>` com tratamento de comandos inválidos.
 
+##  Requisitos Implementados (Projeto Principal)
 
 ##  Estrutura do Repositório
 O projeto está organizado da seguinte forma:
@@ -44,10 +45,6 @@ O projeto está organizado da seguinte forma:
     * `comandos.asm`: Lógica de interpretação dos comandos.
     * `dados.asm`: Definição das estruturas de dados para cardápio e mesas.
     * `arquivos.asm`: Funções para salvar e recarregar dados em arquivos externos.
-
-
-##  Requisitos Implementados (Projeto Principal)
-
 
 ##  Como Executar
 
