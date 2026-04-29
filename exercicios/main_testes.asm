@@ -11,6 +11,12 @@
     string_origem:  .asciiz "Item: Picanha"  # String que queremos copiar
     buffer_destino: .space 30                # Reserva 30 bytes vazios para o destino
 
+    # Dados para o teste da strcat
+    str_destino:   .asciiz "Ola "
+                   .space 20         # Espa√ßo extra para caber o "Mundo!"
+    str_origem:    .asciiz "Mundo!"
+    msg_strcat:    .asciiz "\nTeste strcat (Concatena√ß√£o): "
+
 .text
 .globl main
 
@@ -19,13 +25,27 @@ main:
     la $a0, buffer_destino    # $a0 = destino
     la $a1, string_origem     #$a1 = origem
     
-    jal strcpy         # Salta para a funÁ„o strcpy (em outro arquivo) e salva o endereÁo de retorno em $ra
+    jal strcpy         # Salta para a fun√ß√£o strcpy (em outro arquivo) e salva o endere√ßo de retorno em $ra
     
     # Mostra o resultado na tela
-    move $a0, $v0      # Move o valor de retorno ($v0 contÈm o endereÁo do destino) para $a0 para impress„o
-    li $v0, 4          # Prepara o sistema para imprimir uma string (ServiÁo 4)
+    move $a0, $v0      # Move o valor de retorno ($v0 cont√™m o endere√ßo do destino) para $a0 para impress√£o
+    li $v0, 4          # Prepara o sistema para imprimir uma string (Servi√ßo 4)
     syscall
 
+    # INICIO DO TESTE STRCAT
+    la $a0, str_destino    # Carrega base do destino
+    la $a1, str_origem     # Carrega origem
+    jal strcat             # Executa a juncao
+
+    # Impressao do resultado
+    li $v0, 4
+    la $a0, msg_strcat     # Imprime o rotulo
+    syscall
+    
+    li $v0, 4              # Servi√ßo 4: Imprimir String
+    la $a0, str_destino    # Carrega o endere√ßo da string que agora deve ter
+    syscall                
+
     # Finaliza o programa 
-    li $v0, 10	      #	Escolhe a funÁ„o de "encerrar programa" (serviÁo 10)			
-    syscall           # Finaliza a execuÁ„o
+    li $v0, 10	      #	Escolhe a fun√ß√£o de "encerrar programa" (servi√ßo 10)			
+    syscall           # Finaliza a execu√ß√£o
