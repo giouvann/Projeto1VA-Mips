@@ -4,7 +4,7 @@
 # DISCIPLINA: Arquitetura e Organização de Computadores 
 # SEMESTRE: 2026.1 
 # QUESTÃO: Função strcat  
-# DESCRIÇÃO: 
+# DESCRIÇÃO: Une duas strings "colando" a segunda logo após o término da primeira na memória.
 ######################################################################################
 .globl strcat
 
