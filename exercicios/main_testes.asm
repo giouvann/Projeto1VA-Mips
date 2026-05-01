@@ -16,6 +16,14 @@
                    .space 20         # Espanssço extra para caber o "Mundo!"
     str_origem:    .asciiz "Mundo!"
     msg_strcat:    .asciiz "\nTeste strcat (Concatenação): "
+    
+    # Dados para o teste de strncmp
+    str_ncmp1: .asciiz "Ola mundo"
+    str_ncmp2: .asciiz "Ola mundo meu"
+    
+    # Dados para o teste de strcmp
+    str_cmp1: .asciiz "Para lanches"
+    str_cmp2: .asciiz "Para lanches"
 
 .text
 .globl main
@@ -23,7 +31,9 @@
 main:
 	#jal teste_strcpy
 	#jal teste_memcpy
-	jal teste_strcat
+	#jal teste_strcat
+	#jal teste_strncmp
+	jal teste_strcmp
 
 	# Finaliza o programa após o teste escolhido
 	li $v0, 10		# Escolhe a função de "encerrar programa" (serviço 10)
@@ -84,3 +94,36 @@ teste_strcat:
         lw $ra, 0($sp)		# Recupera endereço de retorno
         addi $sp, $sp, 4	# Fecha o espaço na pilha
         jr $ra			# Retorna para o main
+
+teste_strncmp:
+        addi $sp, $sp, -4	# Salva o endereço de retorno na pilha
+        sw $ra, 0($sp)		# Armazena o endereço de volta pro main
+
+        la $a0, str_ncmp1    	# Carrega primeira string
+        la $a1, str_ncmp2     	# Carrega segunda string
+        li $a2, 10		# Define range de letras a serem testadas
+        jal strncmp		# Executa a comparação
+        
+        move $a0, $v0
+        li $v0, 1              # Serviço 4: Imprimir String
+        syscall
+
+        lw $ra, 0($sp)		# Recupera endereço de retorno
+        addi $sp, $sp, 4	# Fecha o espaço na pilha
+        jr $ra			# Retorna para o main
+
+teste_strcmp:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)
+	
+	la $a0, str_cmp1
+	la $a1, str_cmp2
+	jal strcmp
+	
+	move $a0, $v0
+        li $v0, 1              # Serviço 4: Imprimir String
+        syscall
+
+        lw $ra, 0($sp)		# Recupera endereço de retorno
+        addi $sp, $sp, 4	# Fecha o espaço na pilha
+        jr $ra
