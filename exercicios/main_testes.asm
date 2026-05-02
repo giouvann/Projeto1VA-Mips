@@ -29,11 +29,11 @@
 .globl main
 
 main:
-	#jal teste_strcpy
+	jal teste_strcpy
 	#jal teste_memcpy
 	#jal teste_strcat
 	#jal teste_strncmp
-	jal teste_strcmp
+	#jal teste_strcmp
 
 	# Finaliza o programa após o teste escolhido
 	li $v0, 10		# Escolhe a função de "encerrar programa" (serviço 10)
