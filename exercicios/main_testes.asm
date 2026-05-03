@@ -26,9 +26,9 @@
     str_cmp2: .asciiz "Para lanches"
 
 .text
-.globl main
+.globl main_teste
 
-main:
+main_teste:
 	jal teste_strcpy
 	#jal teste_memcpy
 	#jal teste_strcat
