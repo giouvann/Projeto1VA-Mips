@@ -24,6 +24,7 @@ str_cardapio_list: .asciiz "cardapio_list"
 str_cardapio_format: .asciiz "cardapio_format"
 str_salvar: .asciiz "salvar"
 str_recarregar: .asciiz "recarregar"
+str_formatar: .asciiz "formatar"
 
 msg_err_comando: .asciiz "\n\nComando invalido\n"
 msg_err_codigo: .asciiz "\n\nFalha: código de item inválido\n"
@@ -31,6 +32,8 @@ msg_err_item:   .asciiz "\n\nFalha: número de item já cadastrado\n"
 msg_adicionado: .asciiz "\n\nItem adicionado com sucesso\n"
 msg_removido:       .asciiz "\n\nItem removido com sucesso\n"
 msg_err_nao_existe: .asciiz "\n\nErro: item nao existe\n"
+msg_formatado: .asciiz "\n\nCardápio formatado. Use 'salvar' para alterar em arquivo.\n"
+msg_cardapio_vazio: .asciiz "\n\nCardapio vazio\n"
 
 resultado:
     .word 0   # codigo
@@ -86,6 +89,16 @@ main:
 #	jal switch_comandos
     	    	
 	la $a0, str_recarregar
+	la $a1, resultado
+	jal conversao_cmd
+	jal switch_comandos
+	
+	la $a0, teste_list
+	la $a1, resultado
+	jal conversao_cmd
+	jal switch_comandos
+	
+	la $a0, str_formatar
 	la $a1, resultado
 	jal conversao_cmd
 	jal switch_comandos
@@ -232,6 +245,12 @@ switch_comandos:
 	la $a1, str_recarregar
 	jal strcmp
 	beq $v0, $zero, chama_recarregar
+	
+	# ------------------ formatar  ------------------
+	move $a0, $s0
+	la $a1, str_formatar
+	jal strcmp
+	beq $v0, $zero, chama_formatar
 
     	# comando inválido
     	li $v0, 4
@@ -269,6 +288,10 @@ chama_salvar:
 	
 chama_recarregar:
 	jal recarregar
+	j fim_switch
+	
+chama_formatar:
+	jal formatar
 	j fim_switch
 
 # ------------------ FIM ------------------
@@ -402,27 +425,31 @@ fim_str_to_int:
     	
 cardapio_list:
     	# -------- PROLOGUE --------
-	addi $sp, $sp, -16
+	addi $sp, $sp, -20
 	sw $ra, 0($sp)
 	sw $s0, 4($sp)
 	sw $s1, 8($sp)
 	sw $s2, 12($sp)
+	sw $s3, 16($sp)
 
 	li $s0, 0              # i = 0
+	li $s3, 0              # flag = 0 (nenhum item encontrado)
 
 loop_list:
 	li $t0, MAX_ITENS
-	bge $s0, $t0, fim_list
+	bge $s0, $t0, fim_loop_list
 
 	# calcular endereço --------
 	la $t1, cardapio
 	li $t2, ITEM_SIZE
 	mul $t3, $s0, $t2
-	add $s1, $t1, $t3     # s1 = endereço do item
+	add $s1, $t1, $t3
 
 	# verificar se existe --------
 	lw $t4, CODIGO_OFFSET($s1)
 	beq $t4, $zero, proximo_item_list
+
+	li $s3, 1   # encontrou pelo menos um item
 
 	# -------- imprimir separador --------
     	li $v0, 4
@@ -458,13 +485,25 @@ loop_list:
     	li $v0, 4
     	syscall
     	
-    	li $v0, 11      # print_char
-	li $a0, 10      # ASCII de '\n'
+    	li $v0, 11
+	li $a0, 10
 	syscall
 
 proximo_item_list:
     	addi $s0, $s0, 1
     	j loop_list
+
+# -------- fim do loop --------
+fim_loop_list:
+
+	# se nenhum item foi encontrado
+	beq $s3, $zero, cardapio_vazio
+	j fim_list
+
+cardapio_vazio:
+	li $v0, 4
+	la $a0, msg_cardapio_vazio
+	syscall
 
 fim_list:
     	# -------- EPILOGUE --------
@@ -472,10 +511,11 @@ fim_list:
     	lw $s0, 4($sp)
     	lw $s1, 8($sp)
     	lw $s2, 12($sp)
-    	addi $sp, $sp, 16
+	lw $s3, 16($sp)
+    	addi $sp, $sp, 20
 
     	jr $ra
-
+   
 cardapio_rm:
     	# -------- PROLOGUE --------
     	addi $sp, $sp, -20
@@ -635,5 +675,20 @@ recarregar:
     li $v0, 16
     move $a0, $s0
     syscall
+
+    jr $ra
+
+formatar:
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    jal cardapio_format
+
+    li $v0, 4
+    la $a0, msg_formatado
+    syscall
+
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
 
     jr $ra
