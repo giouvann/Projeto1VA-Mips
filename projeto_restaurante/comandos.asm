@@ -1,24 +1,30 @@
 .data
-teste_comando: .asciiz "cardapio_ad-15-00490-coca cola"
-teste_rm: .asciiz "15"
+teste_comando1: .asciiz "cardapio_ad-15-00490-coca cola"
+teste_comando2: .asciiz "cardapio_ad-15-00490-coca cola"
+teste_comando3: .asciiz "cardapio_ad-1-00890-coca cola 1l"
+teste_comando4: .asciiz "cardapio_ad-2-01490-hamburguer"
+teste_rm: .asciiz "cardapio_rm-15"
+teste_list: .asciiz "cardapio_list"
+teste_format: .asciiz "cardapio_format"
 
 str_cardapio_ad: .asciiz "cardapio_ad"
 str_cardapio_rm: .asciiz "cardapio_rm"
 str_cardapio_list: .asciiz "cardapio_list"
+str_cardapio_format: .asciiz "cardapio_format"
 
-msg_err_comando: .asciiz "\nComando invalido\n"
-msg_err_codigo: .asciiz "\nFalha: código de item inválido\n"
-msg_err_item:   .asciiz "\nFalha: número de item já cadastrado\n"
-msg_sucesso: .asciiz "\nItem adicionado com sucesso\n"
-msg_removido:       .asciiz "\nItem removido com sucesso\n"
-msg_err_nao_existe: .asciiz "\nErro: item nao existe\n"
+msg_err_comando: .asciiz "\n\nComando invalido\n"
+msg_err_codigo: .asciiz "\n\nFalha: código de item inválido\n"
+msg_err_item:   .asciiz "\n\nFalha: número de item já cadastrado\n"
+msg_adicionado: .asciiz "\n\nItem adicionado com sucesso\n"
+msg_removido:       .asciiz "\n\nItem removido com sucesso\n"
+msg_err_nao_existe: .asciiz "\n\nErro: item nao existe\n"
 
 resultado:
     .word 0   # codigo
     .word 0   # preco
     .word 0   # descricao
 
-msg_item:   .asciiz "\n--- ITEM ---\n"
+msg_item:   .asciiz "\n\n--- ITEM ---\n"
 msg_codigo: .asciiz "Codigo: "
 msg_preco:  .asciiz "\nPreco: "
 msg_desc:   .asciiz "\nDescricao: "
@@ -44,23 +50,60 @@ cardapio:			# Cardápio (array de itens)
 
 # ---------------- MAIN ----------------:
 main:
-    	la $a0, teste_comando
+    	la $a0, teste_comando1
     	move $s0, $a0          # guarda ponteiro original
-
     	la $a1, resultado
     	jal conversao_cmd
-
     	move $a0, $s0          # comando
     	la $a1, resultado      # struct com parametros
     	jal switch_comandos
 	
-	jal cardapio_list
+	la $a0, teste_comando2
+    	move $s0, $a0          # guarda ponteiro original
+    	la $a1, resultado
+    	jal conversao_cmd
+    	move $a0, $s0          # comando
+    	la $a1, resultado      # struct com parametros
+    	jal switch_comandos
 	
-	la $a0, teste_rm
-	jal cardapio_rm
-	
-	jal cardapio_list
+	la $a0, teste_comando3
+    	move $s0, $a0          # guarda ponteiro original
+    	la $a1, resultado
+    	jal conversao_cmd
+    	move $a0, $s0          # comando    	
+    	la $a1, resultado      # struct com parametros
+    	jal switch_comandos
+    	
+    	la $a0, teste_comando4
+    	move $s0, $a0          # guarda ponteiro original
+    	la $a1, resultado
+    	jal conversao_cmd
+    	move $a0, $s0          # comando
+    	la $a1, resultado      # struct com parametros
+    	jal switch_comandos
+    	
+    	la $a0, teste_rm
+    	move $s0, $a0          # guarda ponteiro original
+    	la $a1, resultado
+    	jal conversao_cmd
+    	move $a0, $s0          # comando
+    	la $a1, resultado      # struct com parametros
+    	jal switch_comandos
+    	
+	la $a0, teste_list
+	la $1, resultado
+	jal switch_comandos
 
+	la $a0, teste_format
+	la $1, resultado
+	jal switch_comandos
+	
+
+	la $a0, teste_list
+	la $a1, resultado
+	jal conversao_cmd
+	jal switch_comandos
+	
     	li $v0, 10
     	syscall
 
@@ -155,35 +198,74 @@ end_strcpy:
 
 
 switch_comandos:
-    	addi $sp, $sp, -8
+	addi $sp, $sp, -8
     	sw $ra, 0($sp)
-    	sw $a1, 4($sp)     # salva ponteiro da struct
+    	sw $a1, 4($sp)
 
-    	move $t0, $a0      # comando
+    	move $s0, $a0   # comando
+    	lw $t0, 4($sp)
+    	move $s1, $t0
+
+    	# ------------------ cardapio_ad ------------------
+    	move $a0, $s0
     	la $a1, str_cardapio_ad
-    	move $a0, $t0
     	jal strcmp
-
     	beq $v0, $zero, chama_cardapio_ad
 
+    	# ------------------ cardapio_rm ------------------
+    	move $a0, $s0
+    	la $a1, str_cardapio_rm
+    	jal strcmp
+    	beq $v0, $zero, chama_cardapio_rm
+
+    	# ------------------ cardapio_list ------------------
+    	move $a0, $s0
+    	la $a1, str_cardapio_list
+    	jal strcmp
+    	beq $v0, $zero, chama_cardapio_list
+
+    	# ------------------ cardapio_format ------------------
+    	move $a0, $s0
+    	la $a1, str_cardapio_format
+    	jal strcmp
+    	beq $v0, $zero, chama_cardapio_format
+
+    	# comando inválido
     	li $v0, 4
     	la $a0, msg_err_comando
     	syscall
     	j fim_switch
 
+# ------------------ CHAMADAS ------------------
+
 chama_cardapio_ad:
-    	lw $t4, 4($sp)     # struct
+	lw $t0, 4($sp)
+	lw $a0, CODIGO_OFFSET($t0) # codigo
+	lw $a1, PRECO_OFFSET($t0) # preco
+	lw $a2, DESC_OFFSET($t0) # descricao
+	jal cardapio_ad
+	j fim_switch
 
-    	lw $a0, 0($t4)     # codigo
-    	lw $a1, 4($t4)     # preco
-    	lw $a2, 8($t4)     # descricao
+chama_cardapio_rm:
+	lw $t0, 4($sp)
+	lw $a0, CODIGO_OFFSET($t0) # codigo
+    	jal cardapio_rm
+    	j fim_switch
 
-    	jal cardapio_ad
-    
+chama_cardapio_list:
+    	jal cardapio_list
+    	j fim_switch
+
+chama_cardapio_format:
+    	jal cardapio_format
+    	j fim_switch
+
+# ------------------ FIM ------------------
+
 fim_switch:
-    	lw $ra, 0($sp)
-    	addi $sp, $sp, 8
-    	jr $ra
+    lw $ra, 0($sp)
+    addi $sp, $sp, 8
+    jr $ra
 
 cardapio_ad:
     	# -------- PROLOGUE --------
@@ -233,11 +315,18 @@ cardapio_ad:
 	sw $s1, PRECO_OFFSET($s3)
 
     	# -------- DESCRICAO (string) --------	
-	move $t0, $s3
+	move $t5, $s3
 
-	addi $a0, $t0, DESC_OFFSET
+	addi $a0, $t5, DESC_OFFSET
 	move $a1, $s2
 	jal strcpy
+	
+	li $v0, 4
+	la $a0, msg_adicionado
+	syscall
+	
+	j fim_cardapio_ad
+	
 
 fim_cardapio_ad:
     	# -------- EPILOGUE --------
@@ -322,7 +411,7 @@ loop_list:
 
 	# verificar se existe --------
 	lw $t4, CODIGO_OFFSET($s1)
-	beq $t4, $zero, proximo_item
+	beq $t4, $zero, proximo_item_list
 
 	# -------- imprimir separador --------
     	li $v0, 4
@@ -357,8 +446,12 @@ loop_list:
     	addi $a0, $s1, DESC_OFFSET
     	li $v0, 4
     	syscall
+    	
+    	li $v0, 11      # print_char
+	li $a0, 10      # ASCII de '\n'
+	syscall
 
-proximo_item:
+proximo_item_list:
     	addi $s0, $s0, 1
     	j loop_list
 
@@ -436,3 +529,42 @@ erro_item_nao_existe:
     	la $a0, msg_err_nao_existe
     	syscall
     	j fim_cardapio_rm
+    	
+cardapio_format:
+    	# -------- PROLOGUE --------
+    	addi $sp, $sp, -12
+	sw $ra, 0($sp)
+	sw $s0, 4($sp)
+	sw $s1, 8($sp)
+
+	li $s0, 0   # índice = 0
+
+loop_format:
+	li $t0, MAX_ITENS
+	bge $s0, $t0, fim_format
+
+	# calcular endereço do item
+	la $t1, cardapio
+	li $t2, ITEM_SIZE
+	mul $t3, $s0, $t2
+	add $s1, $t1, $t3   # s1 = endereço do item
+
+	# limpar campos
+	sw $zero, CODIGO_OFFSET($s1)
+	sw $zero, PRECO_OFFSET($s1)
+
+	# limpar descrição
+    	addi $t4, $s1, DESC_OFFSET
+    	sb $zero, 0($t4)
+
+    	# próximo item
+    	addi $s0, $s0, 1
+    	j loop_format
+
+fim_format:
+    	# -------- EPILOGUE --------
+    	lw $ra, 0($sp)
+    	lw $s0, 4($sp)
+    	lw $s1, 8($sp)
+    	addi $sp, $sp, 12
+    	jr $ra	
