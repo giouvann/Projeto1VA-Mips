@@ -1,3 +1,11 @@
+######################################################################################
+# GRUPO: David Fernando, Evelin Dionizio, Giovanna Costa, Miguel Monteiro 
+# ATIVIDADE: Projeto 01 - 1ª VA
+# DISCIPLINA: Arquitetura e Organização de Computadores 
+# SEMESTRE: 2026.1 
+# QUESTÃO: Projeto Principal
+# DESCRIÇÃO:
+######################################################################################
 .data
 teste_comando1: .asciiz "cardapio_ad-15-00490-coca cola"
 teste_comando2: .asciiz "cardapio_ad-15-00490-coca cola"
@@ -7,10 +15,15 @@ teste_rm: .asciiz "cardapio_rm-15"
 teste_list: .asciiz "cardapio_list"
 teste_format: .asciiz "cardapio_format"
 
+filename: .asciiz "cardapio.dat"
+msg_err_arquivo: .asciiz "Nao foi possivel abrir o arquivo"
+
 str_cardapio_ad: .asciiz "cardapio_ad"
 str_cardapio_rm: .asciiz "cardapio_rm"
 str_cardapio_list: .asciiz "cardapio_list"
 str_cardapio_format: .asciiz "cardapio_format"
+str_salvar: .asciiz "salvar"
+str_recarregar: .asciiz "recarregar"
 
 msg_err_comando: .asciiz "\n\nComando invalido\n"
 msg_err_codigo: .asciiz "\n\nFalha: código de item inválido\n"
@@ -44,61 +57,39 @@ msg_desc:   .asciiz "\nDescricao: "
 cardapio:			# Cardápio (array de itens)
     .space 960   		# 20 * 48 bytes
 
+.include "arquivos.asm"
 
 .text
 .globl main
 
 # ---------------- MAIN ----------------:
 main:
-    	la $a0, teste_comando1
-    	move $s0, $a0          # guarda ponteiro original
-    	la $a1, resultado
-    	jal conversao_cmd
-    	move $a0, $s0          # comando
-    	la $a1, resultado      # struct com parametros
-    	jal switch_comandos
-	
-	la $a0, teste_comando2
-    	move $s0, $a0          # guarda ponteiro original
-    	la $a1, resultado
-    	jal conversao_cmd
-    	move $a0, $s0          # comando
-    	la $a1, resultado      # struct com parametros
-    	jal switch_comandos
-	
-	la $a0, teste_comando3
-    	move $s0, $a0          # guarda ponteiro original
-    	la $a1, resultado
-    	jal conversao_cmd
-    	move $a0, $s0          # comando    	
-    	la $a1, resultado      # struct com parametros
-    	jal switch_comandos
-    	
-    	la $a0, teste_comando4
-    	move $s0, $a0          # guarda ponteiro original
-    	la $a1, resultado
-    	jal conversao_cmd
-    	move $a0, $s0          # comando
-    	la $a1, resultado      # struct com parametros
-    	jal switch_comandos
-    	
-    	la $a0, teste_rm
-    	move $s0, $a0          # guarda ponteiro original
-    	la $a1, resultado
-    	jal conversao_cmd
-    	move $a0, $s0          # comando
-    	la $a1, resultado      # struct com parametros
-    	jal switch_comandos
-    	
-	la $a0, teste_list
-	la $1, resultado
-	jal switch_comandos
+#	la $a0, teste_comando1
+#    	move $s0, $a0          # guarda ponteiro original
+#    	la $a1, resultado
+#   	jal conversao_cmd
+#    	move $a0, $s0          # comando
+#    	la $a1, resultado      # struct com parametros
+#    	jal switch_comandos
 
-	la $a0, teste_format
-	la $1, resultado
+#	la $a0, teste_comando3
+#    	move $s0, $a0          # guarda ponteiro original
+#    	la $a1, resultado
+#    	jal conversao_cmd
+#    	move $a0, $s0          # comando    	
+#    	la $a1, resultado      # struct com parametros
+#   	jal switch_comandos
+    	    	    	
+#	la $a0, str_salvar
+#	la $a1, resultado
+#	jal conversao_cmd
+#	jal switch_comandos
+    	    	
+	la $a0, str_recarregar
+	la $a1, resultado
+	jal conversao_cmd
 	jal switch_comandos
 	
-
 	la $a0, teste_list
 	la $a1, resultado
 	jal conversao_cmd
@@ -229,6 +220,18 @@ switch_comandos:
     	la $a1, str_cardapio_format
     	jal strcmp
     	beq $v0, $zero, chama_cardapio_format
+    	
+    	# ------------------ salvar ------------------
+    	move $a0, $s0
+	la $a1, str_salvar
+	jal strcmp
+	beq $v0, $zero, chama_salvar
+
+	# ------------------ recarregar  ------------------
+	move $a0, $s0
+	la $a1, str_recarregar
+	jal strcmp
+	beq $v0, $zero, chama_recarregar
 
     	# comando inválido
     	li $v0, 4
@@ -259,6 +262,14 @@ chama_cardapio_list:
 chama_cardapio_format:
     	jal cardapio_format
     	j fim_switch
+    	
+chama_salvar:
+	jal salvar
+	j fim_switch
+	
+chama_recarregar:
+	jal recarregar
+	j fim_switch
 
 # ------------------ FIM ------------------
 
@@ -568,3 +579,61 @@ fim_format:
     	lw $s1, 8($sp)
     	addi $sp, $sp, 12
     	jr $ra	
+
+salvar:
+    # abrir arquivo (write)
+    li $v0, 13
+    la $a0, filename
+    li $a1, 1          # 1 = write
+    li $a2, 0
+    syscall
+
+    move $s0, $v0      # file descriptor
+
+    bltz $s0, erro_arquivo
+
+    # escrever cardapio
+    li $v0, 15
+    move $a0, $s0
+    la $a1, cardapio
+    li $a2, 960        # tamanho total
+    syscall
+
+    # fechar arquivo
+    li $v0, 16
+    move $a0, $s0
+    syscall
+
+    jr $ra
+
+erro_arquivo:
+    li $v0, 4
+    la $a0, msg_err_arquivo
+    syscall
+    jr $ra
+    
+recarregar:
+    # abrir arquivo (read)
+    li $v0, 13
+    la $a0, filename
+    li $a1, 0          # 0 = read
+    li $a2, 0
+    syscall
+
+    move $s0, $v0
+
+    bltz $s0, erro_arquivo
+
+    # ler dados
+    li $v0, 14
+    move $a0, $s0
+    la $a1, cardapio
+    li $a2, 960
+    syscall
+
+    # fechar
+    li $v0, 16
+    move $a0, $s0
+    syscall
+
+    jr $ra
