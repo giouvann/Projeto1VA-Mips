@@ -5,7 +5,6 @@
 # SEMESTRE: 2026.1
 # DESCRICAO: Main de TESTE — valida as funcoes implementadas ate o momento
 ######################################################################################
-.include "dados.asm"
 .include "comandos.asm"
 
 .text

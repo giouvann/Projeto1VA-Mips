@@ -9,7 +9,7 @@
 .data
 
 # --- CONSTANTES — CARDÁPIO ---
-.eqv ITEM_SIZE     48
+.eqv ITEM_SIZE 48
 .eqv MAX_ITENS     20
 .eqv CODIGO_OFFSET  0   # lw/sw  — inteiro, 4 bytes
 .eqv PRECO_OFFSET   4   # lw/sw  — inteiro (centavos), 4 bytes

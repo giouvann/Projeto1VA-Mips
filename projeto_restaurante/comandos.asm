@@ -6,6 +6,7 @@
 # QUESTÃO: Projeto Principal
 # DESCRIÇÃO: Parser, switch de comandos, funções core e utilitários
 ######################################################################################
+.include "dados.asm"
 .text
 
 # ====================================================================================
