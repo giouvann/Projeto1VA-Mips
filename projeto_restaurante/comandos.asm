@@ -1,694 +1,827 @@
 ######################################################################################
-# GRUPO: David Fernando, Evelin Dionizio, Giovanna Costa, Miguel Monteiro 
+# GRUPO: David Fernando, Evelin Dionizio, Giovanna Costa, Miguel Monteiro
 # ATIVIDADE: Projeto 01 - 1ª VA
-# DISCIPLINA: Arquitetura e Organização de Computadores 
-# SEMESTRE: 2026.1 
+# DISCIPLINA: Arquitetura e Organização de Computadores
+# SEMESTRE: 2026.1
 # QUESTÃO: Projeto Principal
-# DESCRIÇÃO:
+# DESCRIÇÃO: Parser, switch de comandos, funções core e utilitários
 ######################################################################################
-.data
-teste_comando1: .asciiz "cardapio_ad-15-00490-coca cola"
-teste_comando2: .asciiz "cardapio_ad-15-00490-coca cola"
-teste_comando3: .asciiz "cardapio_ad-1-00890-coca cola 1l"
-teste_comando4: .asciiz "cardapio_ad-2-01490-hamburguer"
-teste_rm: .asciiz "cardapio_rm-15"
-teste_list: .asciiz "cardapio_list"
-teste_format: .asciiz "cardapio_format"
-
-filename: .asciiz "cardapio.dat"
-msg_err_arquivo: .asciiz "Nao foi possivel abrir o arquivo"
-
-str_cardapio_ad: .asciiz "cardapio_ad"
-str_cardapio_rm: .asciiz "cardapio_rm"
-str_cardapio_list: .asciiz "cardapio_list"
-str_cardapio_format: .asciiz "cardapio_format"
-str_salvar: .asciiz "salvar"
-str_recarregar: .asciiz "recarregar"
-str_formatar: .asciiz "formatar"
-
-msg_err_comando: .asciiz "\n\nComando invalido\n"
-msg_err_codigo: .asciiz "\n\nFalha: código de item inválido\n"
-msg_err_item:   .asciiz "\n\nFalha: número de item já cadastrado\n"
-msg_adicionado: .asciiz "\n\nItem adicionado com sucesso\n"
-msg_removido:       .asciiz "\n\nItem removido com sucesso\n"
-msg_err_nao_existe: .asciiz "\n\nErro: item nao existe\n"
-msg_formatado: .asciiz "\n\nCardápio formatado. Use 'salvar' para alterar em arquivo.\n"
-msg_cardapio_vazio: .asciiz "\n\nCardapio vazio\n"
-
-resultado:
-    .word 0   # codigo
-    .word 0   # preco
-    .word 0   # descricao
-
-msg_item:   .asciiz "\n\n--- ITEM ---\n"
-msg_codigo: .asciiz "Codigo: "
-msg_preco:  .asciiz "\nPreco: "
-msg_desc:   .asciiz "\nDescricao: "
-
-
-.eqv ITEM_SIZE 48		# Tamanho de um item
-
-.eqv MAX_ITENS 20		# Quantidade máxima
-
-.eqv CODIGO_OFFSET 0		# Offset para acessar o código do item
-
-.eqv PRECO_OFFSET 4		# Offset para acessar o preço do item
-
-.eqv DESC_OFFSET 8		# Offset para acessar a descrição do item
-
-.align 2
-cardapio:			# Cardápio (array de itens)
-    .space 960   		# 20 * 48 bytes
-
-.include "arquivos.asm"
-
 .text
-.globl main
 
-# ---------------- MAIN ----------------:
-main:
-#	la $a0, teste_comando1
-#    	move $s0, $a0          # guarda ponteiro original
-#    	la $a1, resultado
-#   	jal conversao_cmd
-#    	move $a0, $s0          # comando
-#    	la $a1, resultado      # struct com parametros
-#    	jal switch_comandos
-
-#	la $a0, teste_comando3
-#    	move $s0, $a0          # guarda ponteiro original
-#    	la $a1, resultado
-#    	jal conversao_cmd
-#    	move $a0, $s0          # comando    	
-#    	la $a1, resultado      # struct com parametros
-#   	jal switch_comandos
-    	    	    	
-#	la $a0, str_salvar
-#	la $a1, resultado
-#	jal conversao_cmd
-#	jal switch_comandos
-    	    	
-	la $a0, str_recarregar
-	la $a1, resultado
-	jal conversao_cmd
-	jal switch_comandos
-	
-	la $a0, teste_list
-	la $a1, resultado
-	jal conversao_cmd
-	jal switch_comandos
-	
-	la $a0, str_formatar
-	la $a1, resultado
-	jal conversao_cmd
-	jal switch_comandos
-	
-	la $a0, teste_list
-	la $a1, resultado
-	jal conversao_cmd
-	jal switch_comandos
-	
-    	li $v0, 10
-    	syscall
-
-
-# -------- FUNÇÃO --------
+# ====================================================================================
+# PARSER DE STRING
+# Entrada : $a0 = ptr string de entrada, $a1 = ptr struct resultado (4 words)
+# Efeito  : preenche resultado[0..3] com ponteiros para cada token
+#           substitui '-' por \0 para separar os tokens in-place
+# ====================================================================================
 conversao_cmd:
-    	addi $sp, $sp, -8
-    	sw $ra, 0($sp)
-    	sw $s0, 4($sp)
+    move $t0, $a0          # cursor na string
+    move $t4, $a1          # base da struct resultado
+    li   $t1, 0            # índice do próximo campo a preencher
 
-    	move $t0, $a0      # ponteiro da string
-    	move $t4, $a1      # ponteiro da struct resultado
-
-    	li $t1, 0          # contador de partes
+    # resultado[0] = início da string (comando)
+    sw   $t0, 0($t4)
+    addi $t1, $t1, 1       # próximo campo: índice 1
 
 loop_parse:
-    	lb $t2, 0($t0)
-    	beq $t2, $zero, fim_parse
+    lb   $t2, 0($t0)
+    beq  $t2, $zero, fim_parse    # fim de string
+    li   $t3, '-'
+    beq  $t2, $t3, parse_separador
+    addi $t0, $t0, 1
+    j    loop_parse
 
-    	li $t3, '-'
-    	beq $t2, $t3, separador
-
-    	addi $t0, $t0, 1
-    	j loop_parse
-
-separador:
-    	sb $zero, 0($t0)   # quebra string
-
-    	addi $t0, $t0, 1   # próximo início
-    	addi $t1, $t1, 1
-
-    	beq $t1, 1, salva_codigo
-    	beq $t1, 2, salva_preco
-    	beq $t1, 3, salva_desc
-
-    	j loop_parse
-
-salva_codigo:
-    	sw $t0, 0($t4)
-    	j loop_parse
-
-salva_preco:
-    	sw $t0, 4($t4)
-    	j loop_parse
-
-salva_desc:
-    	sw $t0, 8($t4)
-    	j loop_parse
+parse_separador:
+    sb   $zero, 0($t0)     # termina token anterior com \0
+    addi $t0, $t0, 1       # avança para início do próximo token
+    bgt  $t1, 3, loop_parse  # ignora separadores além do 3º arg
+    mul  $t5, $t1, 4
+    add  $t5, $t5, $t4
+    sw   $t0, 0($t5)       # resultado[t1] = ptr do novo token
+    addi $t1, $t1, 1
+    j    loop_parse
 
 fim_parse:
-    	lw $ra, 0($sp)
-    	lw $s0, 4($sp)
-    	addi $sp, $sp, 8
-    	jr $ra
-    
-strcmp:
-    	# $a0: ponteiro para a primeira string
-    	# $a1: ponteiro para a segunda string
-    	# $v0: valor de retorno
+    jr $ra
 
-loop_strcmp:
-    	lb $t0, 0($a0)              # Carrega byte da primeira string
-    	lb $t1, 0($a1)              # Carrega byte da segunda string
-    	beq $t0, $t1, check_null_strcmp    # Se os caracteres sao iguais, testa se são null
-    	sub $v0, $t0, $t1           # Caso sejam diferentes, a diferença é armazenada em $v0 
-    	jr $ra                      # Retorna a diferença
-
-check_null_strcmp:
-    	beq $t0, $zero, equal_strcmp       # Se ambos são null (fim das cadeias de caracteres), as string são iguais
-    	addi $a0, $a0, 1            # Não são null, passa para o próximo byte da primeira string
-    	addi $a1, $a1, 1            # Não são null, passa para o próximo byte da segunda string
-    	j loop_strcmp                      # Continua o loop
-
-equal_strcmp:
-    	li $v0, 0                   # Retorna 0 para string iguais
-    	jr $ra                      # Retorno
-
-strcpy:
-	move $v0, $a0               # Copia o endere�o inicial de $a0 para $v0
-
-loop_strcpy:
-	lb $t0, 0($a1)              # L� 1 byte da mem�ria da origem ($a1) para $t0 (Load Byte)
-	sb $t0, 0($a0)              # Escreve esse byte de $t0 no destino $a0 (Store Byte)
-	beq $t0, $zero, end_strcpy         # Se $t0 == 0 (se o caracter for NULL ('\0')'), encerra
-	
-	addi $a0, $a0, 1            # Soma 1 ao endere�o de dentino (vai para o pr�ximo byte)
-	addi $a1, $a1, 1            # Soma 1 ao endere�o de origem (vai para o pr�ximo byte)
-	
-	j loop_strcpy                     # Salto incondicional
-end_strcpy:
-	jr $ra                     # Retorna para quem chamou
-
-
+# ====================================================================================
+# SWITCH DE COMANDOS
+# Entrada : $a1 = ptr struct resultado
+# ====================================================================================
 switch_comandos:
-	addi $sp, $sp, -8
-    	sw $ra, 0($sp)
-    	sw $a1, 4($sp)
+    addi $sp, $sp, -8
+    sw   $ra, 0($sp)
+    sw   $a1, 4($sp)       # salva ptr da struct para recuperar em cada exec_*
 
-    	move $s0, $a0   # comando
-    	lw $t0, 4($sp)
-    	move $s1, $t0
+    # Macro de comparação: sempre recarrega cmd da struct antes de cada strcmp
+    # para não depender de $a0 após jal (caller-saved)
 
-    	# ------------------ cardapio_ad ------------------
-    	move $a0, $s0
-    	la $a1, str_cardapio_ad
-    	jal strcmp
-    	beq $v0, $zero, chama_cardapio_ad
+    lw   $t9, 4($sp)       # ptr struct resultado
+    lw   $a0, 0($t9)       # resultado[0] = ptr do comando
 
-    	# ------------------ cardapio_rm ------------------
-    	move $a0, $s0
-    	la $a1, str_cardapio_rm
-    	jal strcmp
-    	beq $v0, $zero, chama_cardapio_rm
+    la   $a1, str_cardapio_ad
+    jal  strcmp
+    beq  $v0, $zero, exec_cardapio_ad
 
-    	# ------------------ cardapio_list ------------------
-    	move $a0, $s0
-    	la $a1, str_cardapio_list
-    	jal strcmp
-    	beq $v0, $zero, chama_cardapio_list
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    la   $a1, str_cardapio_rm
+    jal  strcmp
+    beq  $v0, $zero, exec_cardapio_rm
 
-    	# ------------------ cardapio_format ------------------
-    	move $a0, $s0
-    	la $a1, str_cardapio_format
-    	jal strcmp
-    	beq $v0, $zero, chama_cardapio_format
-    	
-    	# ------------------ salvar ------------------
-    	move $a0, $s0
-	la $a1, str_salvar
-	jal strcmp
-	beq $v0, $zero, chama_salvar
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    la   $a1, str_cardapio_list
+    jal  strcmp
+    beq  $v0, $zero, exec_cardapio_list
 
-	# ------------------ recarregar  ------------------
-	move $a0, $s0
-	la $a1, str_recarregar
-	jal strcmp
-	beq $v0, $zero, chama_recarregar
-	
-	# ------------------ formatar  ------------------
-	move $a0, $s0
-	la $a1, str_formatar
-	jal strcmp
-	beq $v0, $zero, chama_formatar
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    la   $a1, str_cardapio_format
+    jal  strcmp
+    beq  $v0, $zero, exec_cardapio_format
 
-    	# comando inválido
-    	li $v0, 4
-    	la $a0, msg_err_comando
-    	syscall
-    	j fim_switch
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    la   $a1, str_mesa_iniciar
+    jal  strcmp
+    beq  $v0, $zero, exec_mesa_iniciar
 
-# ------------------ CHAMADAS ------------------
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    la   $a1, str_mesa_ad_item
+    jal  strcmp
+    beq  $v0, $zero, exec_mesa_ad_item
 
-chama_cardapio_ad:
-	lw $t0, 4($sp)
-	lw $a0, CODIGO_OFFSET($t0) # codigo
-	lw $a1, PRECO_OFFSET($t0) # preco
-	lw $a2, DESC_OFFSET($t0) # descricao
-	jal cardapio_ad
-	j fim_switch
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    la   $a1, str_mesa_rm_item
+    jal  strcmp
+    beq  $v0, $zero, exec_mesa_rm_item
 
-chama_cardapio_rm:
-	lw $t0, 4($sp)
-	lw $a0, CODIGO_OFFSET($t0) # codigo
-    	jal cardapio_rm
-    	j fim_switch
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    la   $a1, str_mesa_format
+    jal  strcmp
+    beq  $v0, $zero, exec_mesa_format
 
-chama_cardapio_list:
-    	jal cardapio_list
-    	j fim_switch
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    jal  strcmp
 
-chama_cardapio_format:
-    	jal cardapio_format
-    	j fim_switch
-    	
-chama_salvar:
-	jal salvar
-	j fim_switch
-	
-chama_recarregar:
-	jal recarregar
-	j fim_switch
-	
-chama_formatar:
-	jal formatar
-	j fim_switch
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    jal  strcmp
 
-# ------------------ FIM ------------------
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    jal  strcmp
+
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    jal  strcmp
+
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    jal  strcmp
+
+    lw   $t9, 4($sp)
+    lw   $a0, 0($t9)
+    jal  strcmp
+
+    # Nenhum comando reconhecido
+    li   $v0, 4
+    la   $a0, msg_cmd_invalido
+    syscall
+    j    fim_switch
+
+exec_cardapio_ad:
+    lw   $t9, 4($sp)
+    lw   $a0, 4($t9)
+    lw   $a1, 8($t9)
+    lw   $a2, 12($t9)
+    jal  cardapio_ad
+    j    fim_switch
+
+exec_cardapio_rm:
+    lw   $t9, 4($sp)
+    lw   $a0, 4($t9)
+    jal  cardapio_rm
+    j    fim_switch
+
+exec_cardapio_list:
+    jal  cardapio_list
+    j    fim_switch
+
+exec_cardapio_format:
+    jal  cardapio_format
+    j    fim_switch
+
+exec_mesa_iniciar:
+    lw   $t9, 4($sp)
+    lw   $a0, 4($t9)
+    lw   $a1, 8($t9)
+    lw   $a2, 12($t9)
+    jal  mesa_iniciar
+    j    fim_switch
+
+exec_mesa_ad_item:
+    lw   $t9, 4($sp)
+    lw   $a0, 4($t9)
+    lw   $a1, 8($t9)
+    jal  mesa_ad_item
+    j    fim_switch
+
+exec_mesa_rm_item:
+    lw   $t9, 4($sp)
+    lw   $a0, 4($t9)
+    lw   $a1, 8($t9)
+    jal  mesa_rm_item
+    j    fim_switch
+
+exec_mesa_format:
+    jal  mesa_format
+    j    fim_switch
+
+
+
+
+
+
 
 fim_switch:
-    lw $ra, 0($sp)
+    lw   $ra, 0($sp)
     addi $sp, $sp, 8
-    jr $ra
+    jr   $ra
 
+# ====================================================================================
+# CARDAPIO_AD — adiciona item ao cardápio
+# Entrada : $a0=ptr_cod, $a1=ptr_preco, $a2=ptr_desc
+# ====================================================================================
 cardapio_ad:
-    	# -------- PROLOGUE --------
-    	addi $sp, $sp, -20
-    	sw $ra, 0($sp)
-    	sw $s0, 4($sp)
-    	sw $s1, 8($sp)
-    	sw $s2, 12($sp)
-    	sw $s3, 16($sp)
+    addi $sp, $sp, -20
+    sw   $ra,  0($sp)
+    sw   $s0,  4($sp)    # ptr string código
+    sw   $s1,  8($sp)    # ptr string preço
+    sw   $s2, 12($sp)    # ptr string descrição
+    sw   $s3, 16($sp)    # código inteiro
 
-    	# -------- SALVA PARÂMETROS --------
-    	move $s0, $a0   # codigo (string)
-    	move $s1, $a1   # preco (string)
-    	move $s2, $a2   # descricao (string)
+    move $s0, $a0
+    move $s1, $a1
+    move $s2, $a2
 
-    	# -------- CODIGO (string -> int) --------
-    	move $a0, $s0
-    	jal string_to_int
-    	move $s0, $v0   # salva resultado inteiro
+    move $a0, $s0
+    jal  string_to_int
+    move $s3, $v0
 
-	# -------- VALIDACAO --------
-	blt $s0, 1, erro_codigo
-	bgt $s0, 20, erro_codigo
-	
-	addi $s0, $s0, -1   # transforma em índice (0-based)
-	
-	# -------- CALCULO DO ENDERECO --------
-	la $t0, cardapio
-	li $t1, ITEM_SIZE
+    blt  $s3, 1,  cad_err_cod
+    bgt  $s3, 20, cad_err_cod
 
-	mul $t2, $s0, $t1
-	add $s3, $t0, $t2   # s3 = endereço do item
+    # endereço do slot = cardapio + (cod-1) × ITEM_SIZE
+    addi $t0, $s3, -1
+    li   $t1, ITEM_SIZE
+    mul  $t0, $t0, $t1
+    la   $t2, cardapio
+    add  $t2, $t2, $t0
 
-	# -------- VERIFICAR SE JA EXISTE --------
-	lw $t3, CODIGO_OFFSET($s3)
-	bne $t3, $zero, erro_item_existente
+    # slot já ocupado?
+    lw   $t3, CODIGO_OFFSET($t2)
+    bne  $t3, $zero, cad_err_ja
 
-	# -------- SALVAR CODIGO --------
-	addi $t4, $s0, 1    # volta para valor original
-	sw $t4, CODIGO_OFFSET($s3)
+    # converte preço
+    move $a0, $s1
+    jal  string_to_int
+    move $t4, $v0
 
-    	# -------- PRECO (string -> int) --------
-    	move $a0, $s1
-    	jal string_to_int
-    	move $s1, $v0
+    # grava código e preço
+    sw   $s3, CODIGO_OFFSET($t2)
+    sw   $t4, PRECO_OFFSET($t2)
 
-	sw $s1, PRECO_OFFSET($s3)
+    # copia descrição com limite
+    addi $a0, $t2, DESC_OFFSET
+    move $a1, $s2
+    li   $a2, DESC_SIZE
+    jal  strncopy
 
-    	# -------- DESCRICAO (string) --------	
-	move $t5, $s3
+    li   $v0, 4
+    la   $a0, msg_item_adicionado
+    syscall
+    j    cad_fim
 
-	addi $a0, $t5, DESC_OFFSET
-	move $a1, $s2
-	jal strcpy
-	
-	li $v0, 4
-	la $a0, msg_adicionado
-	syscall
-	
-	j fim_cardapio_ad
-	
+cad_err_cod:
+    li   $v0, 4
+    la   $a0, msg_err_cod_invalido
+    syscall
+    j    cad_fim
 
-fim_cardapio_ad:
-    	# -------- EPILOGUE --------
-    	lw $ra, 0($sp)
-    	lw $s0, 4($sp)
-    	lw $s1, 8($sp)
-    	lw $s2, 12($sp)
-    	lw $s3, 16($sp)
-    	addi $sp, $sp, 20
+cad_err_ja:
+    li   $v0, 4
+    la   $a0, msg_err_ja_cadastrado
+    syscall
 
-    	jr $ra
+cad_fim:
+    lw   $s3, 16($sp)
+    lw   $s2, 12($sp)
+    lw   $s1,  8($sp)
+    lw   $s0,  4($sp)
+    lw   $ra,  0($sp)
+    addi $sp, $sp, 20
+    jr   $ra
 
-erro_codigo:
-    	li $v0, 4
-    	la $a0, msg_err_codigo
-    	syscall
-
-    	j fim_cardapio_ad
-    
-erro_item_existente:
-    	li $v0, 4
-    	la $a0, msg_err_item
-    	syscall
-
-    	j fim_cardapio_ad
-   
-string_to_int:
-    	li $v0, 0          # resultado = 0
-
-loop_string_to_int:
-    	lb $t0, 0($a0)     # pega caractere atual
-
-    	# fim da string
-    	beq $t0, $zero, fim_str_to_int
-
-    	# quebra de linha '\n'
-    	li $t1, 10
-    	beq $t0, $t1, fim_str_to_int
-
-    	# validar: '0' <= char <= '9'
-    	li $t1, 48         # '0'
-    	li $t2, 57         # '9'
-
-    	blt $t0, $t1, fim_str_to_int  # se < '0', para
-    	bgt $t0, $t2, fim_str_to_int  # se > '9', para
-
-    	# converte ASCII → número
-    	addi $t0, $t0, -48
-
-    	# resultado = resultado * 10
-    	mul $v0, $v0, 10
-
-    	# resultado += digito
-    	add $v0, $v0, $t0
-
-    	# próximo caractere
-    	addi $a0, $a0, 1
-    	beq $zero, $zero, loop_string_to_int
-
-fim_str_to_int:
-    	jr $ra
-    	
-cardapio_list:
-    	# -------- PROLOGUE --------
-	addi $sp, $sp, -20
-	sw $ra, 0($sp)
-	sw $s0, 4($sp)
-	sw $s1, 8($sp)
-	sw $s2, 12($sp)
-	sw $s3, 16($sp)
-
-	li $s0, 0              # i = 0
-	li $s3, 0              # flag = 0 (nenhum item encontrado)
-
-loop_list:
-	li $t0, MAX_ITENS
-	bge $s0, $t0, fim_loop_list
-
-	# calcular endereço --------
-	la $t1, cardapio
-	li $t2, ITEM_SIZE
-	mul $t3, $s0, $t2
-	add $s1, $t1, $t3
-
-	# verificar se existe --------
-	lw $t4, CODIGO_OFFSET($s1)
-	beq $t4, $zero, proximo_item_list
-
-	li $s3, 1   # encontrou pelo menos um item
-
-	# -------- imprimir separador --------
-    	li $v0, 4
-    	la $a0, msg_item
-    	syscall
-
-    	# -------- imprimir código --------
-    	li $v0, 4
-    	la $a0, msg_codigo
-    	syscall
-
-    	move $a0, $t4
-    	li $v0, 1
-    	syscall
-
-    	# -------- imprimir preço --------
-    	lw $t5, PRECO_OFFSET($s1)
-
-    	li $v0, 4
-    	la $a0, msg_preco
-    	syscall
-
-    	move $a0, $t5
-    	li $v0, 1
-    	syscall
-
-    	# -------- imprimir descrição --------
-    	li $v0, 4
-    	la $a0, msg_desc
-    	syscall
-
-    	addi $a0, $s1, DESC_OFFSET
-    	li $v0, 4
-    	syscall
-    	
-    	li $v0, 11
-	li $a0, 10
-	syscall
-
-proximo_item_list:
-    	addi $s0, $s0, 1
-    	j loop_list
-
-# -------- fim do loop --------
-fim_loop_list:
-
-	# se nenhum item foi encontrado
-	beq $s3, $zero, cardapio_vazio
-	j fim_list
-
-cardapio_vazio:
-	li $v0, 4
-	la $a0, msg_cardapio_vazio
-	syscall
-
-fim_list:
-    	# -------- EPILOGUE --------
-    	lw $ra, 0($sp)
-    	lw $s0, 4($sp)
-    	lw $s1, 8($sp)
-    	lw $s2, 12($sp)
-	lw $s3, 16($sp)
-    	addi $sp, $sp, 20
-
-    	jr $ra
-   
+# ====================================================================================
+# CARDAPIO_RM — remove item do cardápio
+# Entrada : $a0 = ptr string com código do item
+# ====================================================================================
 cardapio_rm:
-    	# -------- PROLOGUE --------
-    	addi $sp, $sp, -20
-    	sw $ra, 0($sp)
-    	sw $s0, 4($sp)
-    	sw $s1, 8($sp)
-    	sw $s2, 12($sp)
-    	sw $s3, 16($sp)
+    addi $sp, $sp, -8
+    sw   $ra, 0($sp)
+    sw   $s0, 4($sp)
 
-    	# -------- SALVA PARÂMETRO --------
-    	move $s0, $a0   # codigo (string)
-
-    	# -------- CONVERTER CODIGO --------
-   	move $a0, $s0
-    	jal string_to_int
-    	move $s1, $v0   # codigo int
-
-    	# -------- VALIDACAO --------
-    	blt $s1, 1, erro_codigo
-    	bgt $s1, 20, erro_codigo
-
-    	addi $s1, $s1, -1   # índice
-
-    	# -------- CALCULAR ENDERECO --------
-    	la $t0, cardapio
-    	li $t1, ITEM_SIZE
-
-    	mul $t2, $s1, $t1
-    	add $s2, $t0, $t2   # endereço do item
-
-    	# -------- VERIFICAR SE EXISTE --------
-    	lw $t3, CODIGO_OFFSET($s2)
-    	beq $t3, $zero, erro_item_nao_existe
-
-   	# -------- REMOVER ITEM --------
-    	sw $zero, CODIGO_OFFSET($s2)
-    	sw $zero, PRECO_OFFSET($s2)
-
-    	# limpar descrição (opcional: só colocar '\0' no início)
-    	addi $t4, $s2, DESC_OFFSET
-    	sb $zero, 0($t4)
-
-    	# -------- SUCESSO --------
-    	li $v0, 4
-    	la $a0, msg_removido
-    	syscall
-
-    	j fim_cardapio_rm
-    
-fim_cardapio_rm:
-    	lw $ra, 0($sp)
-    	lw $s0, 4($sp)
-    	lw $s1, 8($sp)
-    	lw $s2, 12($sp)
-    	lw $s3, 16($sp)
-    	addi $sp, $sp, 20
-
-    	jr $ra
-   
-erro_item_nao_existe:
-    	li $v0, 4
-    	la $a0, msg_err_nao_existe
-    	syscall
-    	j fim_cardapio_rm
-    	
-cardapio_format:
-    	# -------- PROLOGUE --------
-    	addi $sp, $sp, -12
-	sw $ra, 0($sp)
-	sw $s0, 4($sp)
-	sw $s1, 8($sp)
-
-	li $s0, 0   # índice = 0
-
-loop_format:
-	li $t0, MAX_ITENS
-	bge $s0, $t0, fim_format
-
-	# calcular endereço do item
-	la $t1, cardapio
-	li $t2, ITEM_SIZE
-	mul $t3, $s0, $t2
-	add $s1, $t1, $t3   # s1 = endereço do item
-
-	# limpar campos
-	sw $zero, CODIGO_OFFSET($s1)
-	sw $zero, PRECO_OFFSET($s1)
-
-	# limpar descrição
-    	addi $t4, $s1, DESC_OFFSET
-    	sb $zero, 0($t4)
-
-    	# próximo item
-    	addi $s0, $s0, 1
-    	j loop_format
-
-fim_format:
-    	# -------- EPILOGUE --------
-    	lw $ra, 0($sp)
-    	lw $s0, 4($sp)
-    	lw $s1, 8($sp)
-    	addi $sp, $sp, 12
-    	jr $ra	
-
-salvar:
-    # abrir arquivo (write)
-    li $v0, 13
-    la $a0, filename
-    li $a1, 1          # 1 = write
-    li $a2, 0
-    syscall
-
-    move $s0, $v0      # file descriptor
-
-    bltz $s0, erro_arquivo
-
-    # escrever cardapio
-    li $v0, 15
-    move $a0, $s0
-    la $a1, cardapio
-    li $a2, 960        # tamanho total
-    syscall
-
-    # fechar arquivo
-    li $v0, 16
-    move $a0, $s0
-    syscall
-
-    jr $ra
-
-erro_arquivo:
-    li $v0, 4
-    la $a0, msg_err_arquivo
-    syscall
-    jr $ra
-    
-recarregar:
-    # abrir arquivo (read)
-    li $v0, 13
-    la $a0, filename
-    li $a1, 0          # 0 = read
-    li $a2, 0
-    syscall
-
+    jal  string_to_int
     move $s0, $v0
 
-    bltz $s0, erro_arquivo
+    blt  $s0, 1,  crm_err_cod
+    bgt  $s0, 20, crm_err_cod
 
-    # ler dados
-    li $v0, 14
-    move $a0, $s0
-    la $a1, cardapio
-    li $a2, 960
+    addi $t0, $s0, -1
+    li   $t1, ITEM_SIZE
+    mul  $t0, $t0, $t1
+    la   $t2, cardapio
+    add  $t2, $t2, $t0
+
+    # slot vazio?
+    lw   $t3, CODIGO_OFFSET($t2)
+    beq  $t3, $zero, crm_err_vazio
+
+    # zera o slot inteiro (48 bytes = 12 words)
+    li   $t3, 12           # 12 words = 48 bytes
+crm_zero:
+    beq  $t3, $zero, crm_ok
+    sw   $zero, 0($t2)
+    addi $t2, $t2, 4
+    addi $t3, $t3, -1
+    j    crm_zero
+
+crm_ok:
+    li   $v0, 4
+    la   $a0, msg_item_removido
+    syscall
+    j    crm_fim
+
+crm_err_cod:
+    li   $v0, 4
+    la   $a0, msg_err_cod_invalido
+    syscall
+    j    crm_fim
+
+crm_err_vazio:
+    li   $v0, 4
+    la   $a0, msg_err_sem_cadastro
     syscall
 
-    # fechar
-    li $v0, 16
-    move $a0, $s0
+crm_fim:
+    lw   $s0, 4($sp)
+    lw   $ra, 0($sp)
+    addi $sp, $sp, 8
+    jr   $ra
+
+# ====================================================================================
+# CARDAPIO_LIST — lista todos os itens cadastrados em ordem crescente de código
+# $s0=cursor e $s1=contador protegidos entre iteracoes do loop
+# ====================================================================================
+cardapio_list:
+    addi $sp, $sp, -12
+    sw   $ra, 0($sp)
+    sw   $s0, 4($sp)     # cursor no array (sobrevive a jals)
+    sw   $s1, 8($sp)     # contador de slots restantes
+
+    la   $s0, cardapio
+    li   $s1, MAX_ITENS
+
+    # verifica se há algum item antes de listar
+    move $t0, $s0
+    li   $t1, MAX_ITENS
+    li   $t2, 0          # contador de itens encontrados
+cl_conta:
+    beq  $t1, $zero, cl_conta_fim
+    lw   $t3, CODIGO_OFFSET($t0)
+    beq  $t3, $zero, cl_conta_prox
+    addi $t2, $t2, 1
+cl_conta_prox:
+    addi $t0, $t0, ITEM_SIZE
+    addi $t1, $t1, -1
+    j    cl_conta
+cl_conta_fim:
+    beq  $t2, $zero, cl_vazio
+
+cl_loop:
+    beq  $s1, $zero, cl_fim
+    lw   $t0, CODIGO_OFFSET($s0)
+    beq  $t0, $zero, cl_prox    # slot vazio, pula
+
+    # imprime código
+    li   $v0, 1
+    move $a0, $t0
+    syscall
+    li   $v0, 4
+    la   $a0, msg_virgula
     syscall
 
+    # imprime preco em centavos (inteiro)
+    lw   $a0, PRECO_OFFSET($s0)
+    li   $v0, 1
+    syscall
+
+    li   $v0, 4
+    la   $a0, msg_virgula
+    syscall
+
+    # imprime descrição — $s0 ainda válido
+    li   $v0, 4
+    addi $a0, $s0, DESC_OFFSET
+    syscall
+
+    li   $v0, 4
+    la   $a0, msg_newline
+    syscall
+
+cl_prox:
+    addi $s0, $s0, ITEM_SIZE
+    addi $s1, $s1, -1
+    j    cl_loop
+
+cl_vazio:
+    li   $v0, 4
+    la   $a0, msg_cardapio_vazio
+    syscall
+
+cl_fim:
+    lw   $s1, 8($sp)
+    lw   $s0, 4($sp)
+    lw   $ra, 0($sp)
+    addi $sp, $sp, 12
+    jr   $ra
+
+# ====================================================================================
+# CARDAPIO_FORMAT — apaga todos os itens do cardápio
+# ====================================================================================
+cardapio_format:
+    la   $t0, cardapio
+    li   $t1, 960          # 960 bytes = 20 × 48
+cf_loop:
+    beq  $t1, $zero, cf_fim
+    sw   $zero, 0($t0)
+    addi $t0, $t0, 4
+    addi $t1, $t1, -4
+    j    cf_loop
+cf_fim:
+    jr   $ra
+
+# ====================================================================================
+# MESA_INICIAR — inicia atendimento em mesa desocupada
+# Entrada : $a0=ptr_id, $a1=ptr_tel, $a2=ptr_nome
+# FIX: $s4 salva endereço da mesa para sobreviver a jals de strcopy
+#      Frame expandido para -24 (6 regs × 4 bytes)
+#      strncopy usado em vez de strcopy (sem limite)
+# ====================================================================================
+mesa_iniciar:
+    addi $sp, $sp, -24        # FIX: era -20, agora -24 para $s4
+    sw   $ra,  0($sp)
+    sw   $s0,  4($sp)         # ptr string ID
+    sw   $s1,  8($sp)         # ptr string telefone
+    sw   $s2, 12($sp)         # ptr string nome
+    sw   $s3, 16($sp)         # ID inteiro
+    sw   $s4, 20($sp)         # FIX: endereço da mesa (sobrevive a jals)
+
+    move $s0, $a0
+    move $s1, $a1
+    move $s2, $a2
+
+    move $a0, $s0
+    jal  string_to_int
+    move $s3, $v0
+
+    blt  $s3, 1,  mi_err_inexistente
+    bgt  $s3, 15, mi_err_inexistente
+
+    # endereço da mesa
+    addi $t0, $s3, -1
+    li   $t1, MESA_SIZE
+    mul  $t0, $t0, $t1
+    la   $t2, mesas
+    add  $t2, $t2, $t0
+    move $s4, $t2             # FIX: $s4 preserva o endereço durante os jals
+
+    # mesa já ocupada?
+    lb   $t3, M_STATUS($s4)
+    li   $t4, 1
+    beq  $t3, $t4, mi_err_ocupada
+
+    # status = ocupada
+    li   $t3, 1
+    sb   $t3, M_STATUS($s4)
+
+    # FIX: strncopy com limite (evita buffer overflow)
+    addi $a0, $s4, M_TEL
+    move $a1, $s1
+    li   $a2, TEL_SIZE
+    jal  strncopy              # $s4 sobrevive pois é $s-reg
+
+    addi $a0, $s4, M_NOME
+    move $a1, $s2
+    li   $a2, NOME_SIZE
+    jal  strncopy              # $s4 ainda intacto
+
+    # FIX: zerar pedidos usando $s4 (não $t2 que foi destruído pelos jals)
+    addi $t5, $s4, M_PEDIDOS
+    li   $t6, MAX_PEDIDOS
+mi_zero_loop:
+    beq  $t6, $zero, mi_zero_fim
+    sw   $zero, 0($t5)         # P_COD = 0
+    sw   $zero, 4($t5)         # P_QTD = 0
+    addi $t5, $t5, PEDIDO_SIZE
+    addi $t6, $t6, -1
+    j    mi_zero_loop
+mi_zero_fim:
+
+    # zera saldo pago
+    sw   $zero, M_PAGO($s4)
+
+    li   $v0, 4
+    la   $a0, msg_mesa_ok
+    syscall
+    j    mi_fim
+
+mi_err_inexistente:
+    li   $v0, 4
+    la   $a0, msg_mesa_inexistente
+    syscall
+    j    mi_fim
+
+mi_err_ocupada:
+    li   $v0, 4
+    la   $a0, msg_mesa_ocupada
+    syscall
+
+mi_fim:
+    lw   $s4, 20($sp)
+    lw   $s3, 16($sp)
+    lw   $s2, 12($sp)
+    lw   $s1,  8($sp)
+    lw   $s0,  4($sp)
+    lw   $ra,  0($sp)
+    addi $sp, $sp, 24
+    jr   $ra
+
+# ====================================================================================
+# MESA_AD_ITEM — adiciona item do cardápio na conta da mesa
+# Entrada : $a0=ptr_id_mesa, $a1=ptr_cod_item
+# ====================================================================================
+mesa_ad_item:
+    addi $sp, $sp, -24
+    sw   $ra,  0($sp)
+    sw   $s0,  4($sp)    # ID mesa inteiro
+    sw   $s1,  8($sp)    # código item inteiro
+    sw   $s2, 12($sp)    # endereço da mesa
+    sw   $s3, 16($sp)    # endereço do slot de pedido
+    sw   $s4, 20($sp)    # (livre para uso futuro)
+
+    jal  string_to_int
+    move $s0, $v0
+
+    blt  $s0, 1,  mai_err_inexistente
+    bgt  $s0, 15, mai_err_inexistente
+
+    # endereço da mesa
+    addi $t0, $s0, -1
+    li   $t1, MESA_SIZE
+    mul  $t0, $t0, $t1
+    la   $t2, mesas
+    add  $t2, $t2, $t0
+    move $s2, $t2
+
+    lb   $t3, M_STATUS($s2)
+    beq  $t3, $zero, mai_err_nao_iniciou
+
+    # converte código do item
+    move $a0, $a1             # $a1 ainda tem ptr_cod_item
+    jal  string_to_int
+    move $s1, $v0
+
+    blt  $s1, 1,  mai_err_cod_item
+    bgt  $s1, 20, mai_err_cod_item
+
+    # verifica se item existe no cardápio
+    addi $t0, $s1, -1
+    li   $t1, ITEM_SIZE
+    mul  $t0, $t0, $t1
+    la   $t2, cardapio
+    add  $t2, $t2, $t0
+    lw   $t3, CODIGO_OFFSET($t2)
+    beq  $t3, $zero, mai_err_nao_cardapio
+
+    # busca slot do pedido na mesa
+    addi $t5, $s2, M_PEDIDOS
+    li   $t6, MAX_PEDIDOS
+mai_busca:
+    beq  $t6, $zero, mai_novo_slot  # não encontrou → slot novo
+    lw   $t7, P_COD($t5)
+    beq  $t7, $s1, mai_incrementa   # já existe → incrementa
+    beq  $t7, $zero, mai_novo_slot  # slot vazio → usa este
+    addi $t5, $t5, PEDIDO_SIZE
+    addi $t6, $t6, -1
+    j    mai_busca
+
+mai_incrementa:
+    lw   $t8, P_QTD($t5)
+    addi $t8, $t8, 1
+    sw   $t8, P_QTD($t5)
+    j    mai_ok
+
+mai_novo_slot:
+    # $t5 aponta para o primeiro slot vazio encontrado
+    sw   $s1, P_COD($t5)
+    li   $t8, 1
+    sw   $t8, P_QTD($t5)
+
+mai_ok:
+    li   $v0, 4
+    la   $a0, msg_item_adicionado
+    syscall
+    j    mai_fim
+
+mai_err_inexistente:
+    li   $v0, 4
+    la   $a0, msg_mesa_inexistente
+    syscall
+    j    mai_fim
+
+mai_err_nao_iniciou:
+    li   $v0, 4
+    la   $a0, msg_mesa_nao_iniciou
+    syscall
+    j    mai_fim
+
+mai_err_cod_item:
+    li   $v0, 4
+    la   $a0, msg_err_cod_invalido
+    syscall
+    j    mai_fim
+
+mai_err_nao_cardapio:
+    li   $v0, 4
+    la   $a0, msg_item_nao_cardapio
+    syscall
+
+mai_fim:
+    lw   $s4, 20($sp)
+    lw   $s3, 16($sp)
+    lw   $s2, 12($sp)
+    lw   $s1,  8($sp)
+    lw   $s0,  4($sp)
+    lw   $ra,  0($sp)
+    addi $sp, $sp, 24
+    jr   $ra
+
+# ====================================================================================
+# MESA_RM_ITEM — remove item da conta da mesa
+# Entrada : $a0=ptr_id_mesa, $a1=ptr_cod_item
+# ====================================================================================
+mesa_rm_item:
+    addi $sp, $sp, -20
+    sw   $ra,  0($sp)
+    sw   $s0,  4($sp)    # ID mesa
+    sw   $s1,  8($sp)    # código item
+    sw   $s2, 12($sp)    # endereço mesa
+    sw   $s3, 16($sp)
+
+    jal  string_to_int
+    move $s0, $v0
+
+    blt  $s0, 1,  mri_err_inexistente
+    bgt  $s0, 15, mri_err_inexistente
+
+    addi $t0, $s0, -1
+    li   $t1, MESA_SIZE
+    mul  $t0, $t0, $t1
+    la   $t2, mesas
+    add  $t2, $t2, $t0
+    move $s2, $t2
+
+    lb   $t3, M_STATUS($s2)
+    beq  $t3, $zero, mri_err_nao_iniciou
+
+    move $a0, $a1
+    jal  string_to_int
+    move $s1, $v0
+
+    blt  $s1, 1,  mri_err_cod
+    bgt  $s1, 20, mri_err_cod
+
+    # busca o item nos pedidos
+    addi $t5, $s2, M_PEDIDOS
+    li   $t6, MAX_PEDIDOS
+mri_busca:
+    beq  $t6, $zero, mri_err_nao_conta
+    lw   $t7, P_COD($t5)
+    beq  $t7, $s1, mri_achou
+    addi $t5, $t5, PEDIDO_SIZE
+    addi $t6, $t6, -1
+    j    mri_busca
+
+mri_achou:
+    lw   $t8, P_QTD($t5)
+    addi $t8, $t8, -1
+    bgt  $t8, $zero, mri_atualiza  # ainda tem unidades
+    # quantidade chegou a 0 → zera o slot
+    sw   $zero, P_COD($t5)
+    sw   $zero, P_QTD($t5)
+    j    mri_ok
+
+mri_atualiza:
+    sw   $t8, P_QTD($t5)
+
+mri_ok:
+    li   $v0, 4
+    la   $a0, msg_item_removido
+    syscall
+    j    mri_fim
+
+mri_err_inexistente:
+    li   $v0, 4
+    la   $a0, msg_mesa_inexistente
+    syscall
+    j    mri_fim
+
+mri_err_nao_iniciou:
+    li   $v0, 4
+    la   $a0, msg_mesa_nao_iniciou
+    syscall
+    j    mri_fim
+
+mri_err_cod:
+    li   $v0, 4
+    la   $a0, msg_err_cod_invalido
+    syscall
+    j    mri_fim
+
+mri_err_nao_conta:
+    li   $v0, 4
+    la   $a0, msg_item_nao_conta
+    syscall
+
+mri_fim:
+    lw   $s3, 16($sp)
+    lw   $s2, 12($sp)
+    lw   $s1,  8($sp)
+    lw   $s0,  4($sp)
+    lw   $ra,  0($sp)
+    addi $sp, $sp, 20
+    jr   $ra
+
+# ====================================================================================
+# MESA_FORMAT — coloca todas as mesas como desocupadas e zera registros
+# ====================================================================================
+mesa_format:
+    la   $t0, mesas
+    li   $t1, 3180         # 15 × 212 bytes
+mf_loop:
+    beq  $t1, $zero, mf_fim
+    sw   $zero, 0($t0)
+    addi $t0, $t0, 4
+    addi $t1, $t1, -4
+    j    mf_loop
+mf_fim:
+    jr   $ra
+
+# ====================================================================================
+# MESA_PARCIAL — relatório de consumo da mesa
+# Entrada : $a0 = ptr string com código da mesa
+# FIX: $s3=cursor pedidos, $s4=contador, $s5=total_pago — protegidos contra jals
+# ====================================================================================
+# ====================================================================================
+# MESA_PAGAR — pagamento parcial
+# Entrada : $a0=ptr_id_mesa, $a1=ptr_valor_centavos
+# ====================================================================================
+# ====================================================================================
+# MESA_FECHAR — fecha a mesa se saldo devedor = 0
+# Entrada : $a0 = ptr string com código da mesa
+# FIX: limite corrigido para 15 (era 10 — typo do enunciado)
+# ====================================================================================
+# ====================================================================================
+# SALVAR — grava cardapio e mesas em arquivo binário
+# ====================================================================================
+# ====================================================================================
+# RECARREGAR — lê arquivo e restaura cardapio e mesas
+# ====================================================================================
+# ====================================================================================
+# FORMATAR — apaga todos os dados em memória (não salva no arquivo)
+# ====================================================================================
+
+
+# --- UTILITÁRIOS ---
+
+# --- strcmp ---
+# Entrada : $a0=ptr_s1, $a1=ptr_s2
+# Saída   : $v0=0 se iguais, !=0 se diferentes
+strcmp:
+    lb $t0, 0($a0)
+    lb $t1, 0($a1)
+    bne $t0, $t1, strcmp_diff
+    beq $t0, $zero, strcmp_equal
+    addi $a0, $a0, 1
+    addi $a1, $a1, 1
+    j strcmp
+strcmp_diff:
+    sub $v0, $t0, $t1
+    jr  $ra
+strcmp_equal:
+    li  $v0, 0
+    jr  $ra
+
+# --- string_to_int ---
+# Entrada : $a0 = ptr string numérica
+# Saída   : $v0 = inteiro convertido
+string_to_int:
+    li $v0, 0
+s2i_loop:
+    lb $t0, 0($a0)
+    blt $t0, 48, s2i_fim
+    bgt $t0, 57, s2i_fim
+    addi $t0, $t0, -48
+    mul  $v0, $v0, 10
+    add  $v0, $v0, $t0
+    addi $a0, $a0, 1
+    j s2i_loop
+s2i_fim:
     jr $ra
 
-formatar:
-    addi $sp, $sp, -4
-    sw $ra, 0($sp)
+# --- strcopy (sem limite — use apenas internamente quando tamanho garantido) ---
+strcopy:
+sc_loop:
+    lb   $t0, 0($a1)
+    sb   $t0, 0($a0)
+    beq  $t0, $zero, sc_fim
+    addi $a0, $a0, 1
+    addi $a1, $a1, 1
+    j    sc_loop
+sc_fim:
+    jr   $ra
 
-    jal cardapio_format
-
-    li $v0, 4
-    la $a0, msg_formatado
-    syscall
-
-    lw $ra, 0($sp)
-    addi $sp, $sp, 4
-
-    jr $ra
+# --- strncopy (com limite — preferida para entradas do usuário) ---
+# Entrada : $a0=dest, $a1=src, $a2=limite (incluindo \0)
+# Sempre termina com \0
+strncopy:
+    move $t2, $a2
+snc_loop:
+    beq  $t2, $zero, snc_termina
+    lb   $t0, 0($a1)
+    beq  $t0, $zero, snc_termina
+    sb   $t0, 0($a0)
+    addi $a0, $a0, 1
+    addi $a1, $a1, 1
+    addi $t2, $t2, -1
+    j    snc_loop
+snc_termina:
+    sb   $zero, 0($a0)    # garante \0 final sempre
+    jr   $ra
