@@ -32,25 +32,25 @@ O projeto principal consiste em um sistema robusto para restaurantes, operado at
 * **Interface Shell**: Banner personalizado no formato `<nome-shell>>` com tratamento de comandos inválidos.
 
 ##  Requisitos Implementados (Projeto Principal)
-R1.	O sistema deve ser capaz de registrar itens no cardápio do restaurante. O sistema permite cardápios com até 20 itens. Cada item deve possuir um código (número de 1 a 20), um preço e uma descrição do item.  
+R1: Foi implementado o cadastro de até 20 itens no cardápio, contendo código, preço e descrição, com validação de entradas inválidas.
 
-R2.	O sistema deve ser capaz de gerenciar até 15 mesas simultaneamente. Cada mesa deve possuir um código (de 01 a 15), status (ocupada/desocupada), um nome de responsável, telefone de contato e um registro de pedidos. 
+R2: Foi implementado o gerenciamento de até 15 mesas, armazenando status, responsável, telefone e pedidos associados.
 
-R3.	O sistema deve ser capaz de registrar pedidos associados a cada mesa. Cada mesa pode ter até 20 pedidos. Pedidos repetidos não devem introduzir uma nova entrada no registro de pedidos. Um contador para pedidos repetidos deve ser considerado. 
+R3: Foi implementado o registro de pedidos por mesa, com suporte a até 20 pedidos e contador para itens repetidos.
 
-R4.	O sistema deve possibilitar o pagamento parcial das contas, abatendo o valor pago do saldo devedor atual. 
+R4: Foi implementado o pagamento parcial da conta, abatendo automaticamente o valor pago do saldo devedor.
 
-R5.	O sistema deve fornecer um relatório de consumo total, listando cada pedido e suas respectivas quantidades, o valor total da conta, o saldo total já pago e o saldo devedor atual por mesa;
+R5: Foi implementado um relatório de consumo contendo pedidos, quantidades, valor total, valor pago e saldo restante da mesa.
 
-R6.	O sistema deve ser capaz de fechar a conta de uma mesa. Para isso, deve checar se o saldo total já foi quitado. Ao fechar a mesa, o sistema deve apagar todos os registros de consumo automaticamente e a mesa deve ficar com status “Desocupada”.
+R6: Foi implementado o fechamento de contas, verificando quitação total antes de liberar e reinicializar a mesa.
 
-R7.	O sistema deve salvar todos os dados em um arquivo de modo que, caso o sistema seja reiniciado, os dados salvos anteriormente devem ser resgatados. Para tal, devem ser utilizados os serviços de arquivos do syscall. Sempre que o programa for inicializado, os dados salvos devem ser resgatados  automaticamente. 
+R7: Foi implementado o salvamento e carregamento automático dos dados utilizando syscalls de arquivos do MIPS.
 
-R8.	O sistema deve ser operado através através de um terminal que fica constantemente lendo entradas de texto (strings) e interpretando o que for recebido para executar comandos. O terminal deve aguardar uma quebra de linha “\n” para tentar interpretar o comando do usuário. 
+R8: Foi implementado um terminal interativo capaz de ler comandos via strings finalizadas por \n.
 
-R9.	A cada nova linha do terminal, uma string padrão deve ser impressa como “banner” na parte anterior ao campo que o usuário deve escrever um comando (similar a um terminal linux ou windows). O formato desta string deve ser “<nome_restaurante>-shell>>“. Criem um nome para o restaurante. Caso o nome seja grande, considere usar abreviaturas no banner. Por exemplo, a string banner do Arvo Restaurante poderia ser “arvo-shell>>“. Segue um vídeo com este exemplo em anexo (link).
+R9: Foi implementado um banner no formato <nome_restaurante>-shell>>, simulando um terminal de sistema operacional.
 
-R10.	Todos os comandos devem ser interpretados através de uma string digitada pelo usuário e finalizados com uma quebra de linha (‘\n’). Alguns comandos podem ter opções e todas as opções devem ser iniciadas com o caractere “-” (sinal de menos). Sempre que um comando não existente for executado, o terminal deve retornar uma mensagem “Comando invalido”. Todos os comandos da seguinte lista devem ser implementados:
+R10: Foi implementado um interpretador de comandos com tratamento de erros para comandos inválidos e suporte a opções iniciadas por -.
 
 ##  Estrutura do Repositório
 O projeto está organizado da seguinte forma:
