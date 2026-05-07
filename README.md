@@ -50,5 +50,43 @@ O projeto está organizado da seguinte forma:
 
 
 
+## Planejamento do uso de memória
+
+### Item cardápio
+| Campo     | Tipo      | Tamanho      | Offset |
+|-----------|-----------|--------------|--------|
+| código    | word      | 4            | 0      |
+| preço     | word      | 4            | 4      |
+| descrição | byte[40]  | 40           | 8      |
+| **TOTAL** | —         | **48 bytes** | —      |
 
 
+
+### Mesa
+| Campo           | Tipo      | Tamanho       | Offset |
+|-----------------|-----------|---------------|--------|
+| status          | word      | 4             | 0      |
+| pago            | word      | 4             | 4      |
+| telefone        | byte[12]  | 12            | 8      |
+| nome            | byte[32]  | 32            | 32     |
+| pedidos         | word[160] | 160           | 52     |
+| **TOTAL**       | —         | **212 bytes** | —      |
+
+
+## Possível erro durante a montagem do programa
+
+Durante os testes realizados em diferentes máquinas dos integrantes do grupo, foi identificado um possível problema relacionado à montagem do programa no MARS. O erro apresentado é:
+
+```text
+"ITEM_SIZE": operand is of incorrect type
+```
+O problema não se limita apenas à constante *ITEM_SIZE*, podendo ocorrer também com outras constantes definidas por meio da diretiva .eqv.
+
+Esse comportamento está relacionado à ordem em que o MARS processa os arquivos incluídos no projeto, podendo fazer com que o arquivo `comandos.asm` seja montado antes de `dados.asm`, onde as constantes são definidas.
+
+Caso esse erro ocorra, a solução consiste em remover a linha:
+```text
+.include "dados.asm"
+```
+
+do arquivo `main.asm` e adicioná-la no início do arquivo `comandos.asm`. Após essa alteração, o programa deverá ser montado e executado normalmente.
