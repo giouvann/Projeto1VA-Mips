@@ -32,6 +32,17 @@ O projeto principal consiste em um sistema robusto para restaurantes, operado at
 * **Interface Shell**: Banner personalizado no formato `<nome-shell>>` com tratamento de comandos inválidos.
 
 ##  Requisitos Implementados (Projeto Principal)
+R1.	O sistema deve ser capaz de registrar itens no cardápio do restaurante. O sistema permite cardápios com até 20 itens. Cada item deve possuir um código (número de 1 a 20), um preço e uma descrição do item.  
+R2.	O sistema deve ser capaz de gerenciar até 15 mesas simultaneamente. Cada mesa deve possuir um código (de 01 a 15), status (ocupada/desocupada), um nome de responsável, telefone de contato e um registro de pedidos. 
+R3.	O sistema deve ser capaz de registrar pedidos associados a cada mesa. Cada mesa pode ter até 20 pedidos. Pedidos repetidos não devem introduzir uma nova entrada no registro de pedidos. Um contador para pedidos repetidos deve ser considerado. 
+R4.	O sistema deve possibilitar o pagamento parcial das contas, abatendo o valor pago do saldo devedor atual. 
+R5.	O sistema deve fornecer um relatório de consumo total, listando cada pedido e suas respectivas quantidades, o valor total da conta, o saldo total já pago e o saldo devedor atual por mesa;
+R6.	O sistema deve ser capaz de fechar a conta de uma mesa. Para isso, deve checar se o saldo total já foi quitado. Ao fechar a mesa, o sistema deve apagar todos os registros de consumo automaticamente e a mesa deve ficar com status “Desocupada”.
+R7.	O sistema deve salvar todos os dados em um arquivo de modo que, caso o sistema seja reiniciado, os dados salvos anteriormente devem ser resgatados. Para tal, devem ser utilizados os serviços de arquivos do syscall. Sempre que o programa for inicializado, os dados salvos devem ser resgatados  automaticamente. 
+R8.	O sistema deve ser operado através através de um terminal que fica constantemente lendo entradas de texto (strings) e interpretando o que for recebido para executar comandos. O terminal deve aguardar uma quebra de linha “\n” para tentar interpretar o comando do usuário. 
+R9.	A cada nova linha do terminal, uma string padrão deve ser impressa como “banner” na parte anterior ao campo que o usuário deve escrever um comando (similar a um terminal linux ou windows). O formato desta string deve ser “<nome_restaurante>-shell>>“. Criem um nome para o restaurante. Caso o nome seja grande, considere usar abreviaturas no banner. Por exemplo, a string banner do Arvo Restaurante poderia ser “arvo-shell>>“. Segue um vídeo com este exemplo em anexo (link).
+R10.	Todos os comandos devem ser interpretados através de uma string digitada pelo usuário e finalizados com uma quebra de linha (‘\n’). Alguns comandos podem ter opções e todas as opções devem ser iniciadas com o caractere “-” (sinal de menos). 
+Sempre que um comando não existente for executado, o terminal deve retornar uma mensagem “Comando invalido”. Todos os comandos da seguinte lista devem ser implementados:
 
 ##  Estrutura do Repositório
 O projeto está organizado da seguinte forma:
@@ -45,10 +56,6 @@ O projeto está organizado da seguinte forma:
     * `comandos.asm`: Lógica de interpretação dos comandos.
     * `dados.asm`: Definição das estruturas de dados para cardápio e mesas.
     * `arquivos.asm`: Funções para salvar e recarregar dados em arquivos externos.
-
-##  Como Executar
-
-
 
 ## Planejamento do uso de memória
 
