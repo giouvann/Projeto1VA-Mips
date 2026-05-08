@@ -100,3 +100,28 @@ Caso esse erro ocorra, a solução consiste em remover a linha:
 ```
 
 do arquivo `main.asm` e adicioná-la no início do arquivo `comandos.asm`. Após essa alteração, o programa deverá ser montado e executado normalmente.
+
+
+## Como utilizar o Sistema
+O sistema opera como um terminal interativo (shell). Ao iniciar o simulador MARS, você verá o banner `<nome_restaurante>-shell>>`. Todos os comandos devem ser digitados seguidos de Enter `(\n)`.
+
+### Configuração do Cardápio
+- Adicionar Item: `cardapio_ad-<código>-<preço>-<descrição>`
+Exemplo: `cardapio_ad-01-00500-Suco de Laranja` (Cadastra o item 01 por R$ 5,00)
+- Listar Itens: `cardapio_list` (Exibe todos os produtos cadastrados e seus respectivos preços).
+
+### Gerenciamento de Mesas
+- Iniciar Atendimento: `mesa_iniciar-<número_mesa>-<telefone>-<nome>`
+Exemplo: `mesa_iniciar-05-08199998888-Maria Silva.`  
+- Adicionar Pedido: `mesa_ad_item-<número_mesa>-<código_item>`
+Exemplo: `mesa_ad_item-05-01` (Adiciona o Suco de Laranja à mesa 05).
+
+### Relatórios e Pagamento
+- Conferir Consumo: `mesa_parcial-<número_mesa>` (Gera um relatório com itens, quantidades, valor total acumulado e saldo devedor.)
+- Realizar Pagamento: `mesa_pagar-<número_mesa>-<valor>`
+Exemplo: `mesa_pagar-05-00250` (Paga R$ 2,50 da conta da mesa 05).
+
+### Fechamento e Persistência 
+- Fechar mesa: `mesa_fechar-<número_mesa>` (O sistema só permitirá o fechamento se o saldo devedor for zero.)
+- `salvar`: Grava o estado atual do cardápio e das mesas no arquivo externo.
+- `recarregar`: Recupera os dados salvos anteriormente (útil caso o sistema seja reiniciado).
