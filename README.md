@@ -32,6 +32,20 @@ O projeto principal consiste em um sistema robusto para restaurantes, operado at
 * **Interface Shell**: Banner personalizado no formato `<nome-shell>>` com tratamento de comandos inválidos.
 
 ##  Requisitos Implementados (Projeto Principal)
+### Gestão de Dados e Memória
+- Módulo de Inventário: Estruturação de dados para até 20 itens de cardápio, com tratamento de exceções para entradas inválidas e validação de tipos.
+- Gerenciamento de Instâncias (Mesas): Alocação e controle de estado para 15 mesas, integrando registros de identificação (ID, responsável, contato) e ponteiros para listas de consumo.
+- Processamento de Pedidos: Registro de consumo com capacidade de 20 entradas por mesa, incluindo lógica de incremento para itens redundantes.
+
+### Lógica de Negócio e Financeiro
+- Transações Financeiras: Algoritmo de abatimento parcial de débitos, garantindo a integridade do saldo devedor através de operações aritméticas.
+- Relatórios de Consumo: Geração de extratos detalhados contendo o valor total consumido pela mesa, os valores pagos parcialmente e o saldo restante a ser pago.
+- Finalização de Ciclo: Procedimento de fechamento de contas com verificação de quitação integral e reinicialização segura de buffers para liberação da mesa.
+
+### Persistência e Interface (I/O)
+- Persistência de Dados: Implementação de persistência via MIPS Syscalls para manipulação de arquivos, garantindo o salvamento e carregamento do estado da aplicação.
+- Interface de Linha de Comando (CLI): Desenvolvimento de um terminal interativo baseado em polling de strings terminadas em \n.
+- Shell Customizado: Implementação de um banner dinâmico e interpretador de comandos com suporte a argumentos (flags iniciadas por -) e tratamento de erros sintáticos.
 
 ##  Estrutura do Repositório
 O projeto está organizado da seguinte forma:
@@ -45,10 +59,6 @@ O projeto está organizado da seguinte forma:
     * `comandos.asm`: Lógica de interpretação dos comandos.
     * `dados.asm`: Definição das estruturas de dados para cardápio e mesas.
     * `arquivos.asm`: Funções para salvar e recarregar dados em arquivos externos.
-
-##  Como Executar
-
-
 
 ## Planejamento do uso de memória
 
@@ -90,3 +100,28 @@ Caso esse erro ocorra, a solução consiste em remover a linha:
 ```
 
 do arquivo `main.asm` e adicioná-la no início do arquivo `comandos.asm`. Após essa alteração, o programa deverá ser montado e executado normalmente.
+
+
+## Como utilizar o Sistema
+O sistema opera como um terminal interativo (shell). Ao iniciar o simulador MARS, você verá o banner `<nome_restaurante>-shell>>`. Todos os comandos devem ser digitados seguidos de Enter `(\n)`.
+
+### Configuração do Cardápio
+- Adicionar Item: `cardapio_ad-<código>-<preço>-<descrição>`
+Exemplo: `cardapio_ad-01-00500-Suco de Laranja` (Cadastra o item 01 por R$ 5,00)
+- Listar Itens: `cardapio_list` (Exibe todos os produtos cadastrados e seus respectivos preços).
+
+### Gerenciamento de Mesas
+- Iniciar Atendimento: `mesa_iniciar-<número_mesa>-<telefone>-<nome>`
+Exemplo: `mesa_iniciar-05-08199998888-Maria Silva.`  
+- Adicionar Pedido: `mesa_ad_item-<número_mesa>-<código_item>`
+Exemplo: `mesa_ad_item-05-01` (Adiciona o Suco de Laranja à mesa 05).
+
+### Relatórios e Pagamento
+- Conferir Consumo: `mesa_parcial-<número_mesa>` (Gera um relatório com itens, quantidades, valor total acumulado e saldo devedor.)
+- Realizar Pagamento: `mesa_pagar-<número_mesa>-<valor>`
+Exemplo: `mesa_pagar-05-00250` (Paga R$ 2,50 da conta da mesa 05).
+
+### Fechamento e Persistência 
+- Fechar mesa: `mesa_fechar-<número_mesa>` (O sistema só permitirá o fechamento se o saldo devedor for zero.)
+- `salvar`: Grava o estado atual do cardápio e das mesas no arquivo externo.
+- `recarregar`: Recupera os dados salvos anteriormente (útil caso o sistema seja reiniciado).

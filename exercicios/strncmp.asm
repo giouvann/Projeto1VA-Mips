@@ -4,7 +4,7 @@
 # DISCIPLINA: Arquitetura e Organização de Computadores 
 # SEMESTRE: 2026.1 
 # QUESTÃO: Questao 4 - Função strncmp  
-# DESCRIÇÃO: 
+# DESCRIÇÃO: compara até N caracteres de duas strings
 ######################################################################################
 .globl strncmp
 
