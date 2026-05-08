@@ -9,7 +9,7 @@
 ######################################################################################
 
 # Inclui o segmento .data com todas as constantes, mensagens e estruturas de dados
-.include "dados.asm"
+#include "dados.asm"
 
 # Inclui o segmento .text com o parser, switch e todas as funções do sistema
 .include "comandos.asm"

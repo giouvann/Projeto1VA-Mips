@@ -7,6 +7,9 @@
 # DESCRIÇÃO: Parser de comandos, switch de despacho, funções do sistema e utilitários
 ######################################################################################
 
+# Inclui o segmento .data com todas as constantes, mensagens e estruturas de dados
+.include "dados.asm"
+
 # Diretiva que inicia o segmento de código (instruções executáveis)
 .text
 
@@ -1114,46 +1117,54 @@ mf2_fim:
 #           grava o array cardápio (960 bytes) e o array mesas (3180 bytes),
 #           e fecha o arquivo. Exibe mensagem de êxito ou erro.
 salvar:
+    # PROLOGO
     addi $sp, $sp, -8
     sw   $ra, 0($sp)
-    sw   $s0, 4($sp)       # guarda o descritor do arquivo (retorno do open)
+    sw   $s0, 4($sp)
 
-    li   $v0, 13           # syscall 13 = open (abre arquivo)
-    la   $a0, nome_arquivo # $a0 = caminho do arquivo
-    li   $a1, 0x201        # $a1 = flags: O_WRONLY(1) | O_CREAT(0x200) — cria se não existir
-    li   $a2, 0            # $a2 = mode (não usado no MARS)
-    syscall
-    move $s0, $v0          # $s0 = descritor do arquivo (negativo se falhou)
-
-    bltz $s0, salvar_err   # se negativo, abriu com erro
-
-    li   $v0, 15           # syscall 15 = write (escreve no arquivo)
-    move $a0, $s0          # $a0 = descritor do arquivo
-    la   $a1, cardapio     # $a1 = endereço dos dados a escrever (cardápio)
-    li   $a2, 960          # $a2 = quantidade de bytes a escrever
+    # abrir arquivo (write)
+    li $v0, 13
+    la $a0, nome_arquivo
+    li $a1, 1
+    li $a2, 0
     syscall
 
-    li   $v0, 15           # segunda escrita: salva o array de mesas
+    move $s0, $v0
+
+    bltz $s0, salvar_err
+
+    # escrever cardapio
+    li $v0, 15
     move $a0, $s0
-    la   $a1, mesas        # $a1 = endereço do array de mesas
-    li   $a2, 3180         # $a2 = 3180 bytes
+    la $a1, cardapio
+    li $a2, 960
     syscall
 
-    li   $v0, 16           # syscall 16 = close (fecha o arquivo)
+    # escrever mesas
+    li $v0, 15
+    move $a0, $s0
+    la $a1, mesas
+    li $a2, 3180
+    syscall
+
+    # fechar arquivo
+    li $v0, 16
     move $a0, $s0
     syscall
-
-    li   $v0, 4
-    la   $a0, msg_salvo_ok  # confirma salvamento com sucesso
+    
+    li $v0, 4
+    la $a0, msg_salvo_ok
     syscall
-    j    salvar_fim
+    
+    j salvar_fim
 
 salvar_err:
-    li   $v0, 4
-    la   $a0, msg_err_arquivo  # informa falha ao abrir/criar o arquivo
+    li $v0, 4
+    la $a0, msg_err_arquivo
     syscall
 
 salvar_fim:
+    # EPILOGO
     lw   $s0, 4($sp)
     lw   $ra, 0($sp)
     addi $sp, $sp, 8
@@ -1163,46 +1174,54 @@ salvar_fim:
 # Efeito  : Abre o arquivo de persistência em modo leitura, lê cardápio e mesas
 #           de volta para a memória, e fecha o arquivo.
 recarregar:
+    # PROLOGO
     addi $sp, $sp, -8
     sw   $ra, 0($sp)
-    sw   $s0, 4($sp)       # descritor do arquivo
+    sw   $s0, 4($sp)
 
-    li   $v0, 13           # syscall 13 = open
-    la   $a0, nome_arquivo
-    li   $a1, 0            # $a1 = flags: O_RDONLY (somente leitura)
-    li   $a2, 0
+    # abrir arquivo (read)
+    li $v0, 13
+    la $a0, nome_arquivo
+    li $a1, 0
+    li $a2, 0
     syscall
-    move $s0, $v0          # $s0 = descritor (negativo se arquivo não existe)
 
-    bltz $s0, recarregar_err  # se negativo, arquivo não pôde ser aberto
+    move $s0, $v0
 
-    li   $v0, 14           # syscall 14 = read (lê do arquivo)
+    bltz $s0, recarregar_err
+
+    # ler cardapio
+    li $v0, 14
     move $a0, $s0
-    la   $a1, cardapio     # destino da leitura: array cardápio
-    li   $a2, 960          # quantidade de bytes a ler
+    la $a1, cardapio
+    li $a2, 960
     syscall
-
-    li   $v0, 14           # segunda leitura: restaura o array de mesas
+    
+    # ler mesas
+    li $v0, 14
     move $a0, $s0
-    la   $a1, mesas
-    li   $a2, 3180
+    la $a1, mesas
+    li $a2, 3180
     syscall
 
-    li   $v0, 16           # fecha o arquivo após leitura
+    # fechar arquivo
+    li $v0, 16
     move $a0, $s0
     syscall
-
-    li   $v0, 4
-    la   $a0, msg_recarregado_ok  # confirma recarregamento com sucesso
+    
+    li $v0, 4
+    la $a0, msg_recarregado_ok
     syscall
-    j    recarregar_fim
+
+    j recarregar_fim
 
 recarregar_err:
-    li   $v0, 4
-    la   $a0, msg_err_arquivo  # arquivo não encontrado ou sem permissão de leitura
+    li $v0, 4
+    la $a0, msg_err_arquivo
     syscall
 
 recarregar_fim:
+    # EPILOGO
     lw   $s0, 4($sp)
     lw   $ra, 0($sp)
     addi $sp, $sp, 8

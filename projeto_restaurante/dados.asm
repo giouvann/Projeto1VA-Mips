@@ -134,7 +134,7 @@ str_formatar:        .asciiz "formatar"        # Texto esperado para apagar todo
 # Caminho absoluto onde o arquivo binário de dados é salvo e lido.
 # Deve ser ajustado se o projeto for movido de diretório.
 
-nome_arquivo: .asciiz "dados_resto.bin"
+nome_arquivo: .asciiz "dados_resto.txt"
 
 # BUFFER DE ENTRADA DO SHELL
 # Área onde o syscall 8 (read_string) deposita a linha digitada pelo usuário.
