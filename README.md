@@ -32,25 +32,20 @@ O projeto principal consiste em um sistema robusto para restaurantes, operado at
 * **Interface Shell**: Banner personalizado no formato `<nome-shell>>` com tratamento de comandos inválidos.
 
 ##  Requisitos Implementados (Projeto Principal)
-R1: Foi implementado o cadastro de até 20 itens no cardápio, contendo código, preço e descrição, com validação de entradas inválidas.
+### Gestão de Dados e Memória
+- Módulo de Inventário: Estruturação de dados para até 20 itens de cardápio, com tratamento de exceções para entradas inválidas e validação de tipos.
+- Gerenciamento de Instâncias (Mesas): Alocação e controle de estado para 15 mesas, integrando registros de identificação (ID, responsável, contato) e ponteiros para listas de consumo.
+- Processamento de Pedidos: Registro de consumo com capacidade de 20 entradas por mesa, incluindo lógica de incremento para itens redundantes.
 
-R2: Foi implementado o gerenciamento de até 15 mesas, armazenando status, responsável, telefone e pedidos associados.
+### Lógica de Negócio e Financeiro
+- Transações Financeiras: Algoritmo de abatimento parcial de débitos, garantindo a integridade do saldo devedor através de operações aritméticas.
+- Relatórios de Consumo: Geração de extratos detalhados contendo o valor total consumido pela mesa, os valores pagos parcialmente e o saldo restante a ser pago.
+- Finalização de Ciclo: Procedimento de fechamento de contas com verificação de quitação integral e reinicialização segura de buffers para liberação da mesa.
 
-R3: Foi implementado o registro de pedidos por mesa, com suporte a até 20 pedidos e contador para itens repetidos.
-
-R4: Foi implementado o pagamento parcial da conta, abatendo automaticamente o valor pago do saldo devedor.
-
-R5: Foi implementado um relatório de consumo contendo pedidos, quantidades, valor total, valor pago e saldo restante da mesa.
-
-R6: Foi implementado o fechamento de contas, verificando quitação total antes de liberar e reinicializar a mesa.
-
-R7: Foi implementado o salvamento e carregamento automático dos dados utilizando syscalls de arquivos do MIPS.
-
-R8: Foi implementado um terminal interativo capaz de ler comandos via strings finalizadas por \n.
-
-R9: Foi implementado um banner no formato <nome_restaurante>-shell>>, simulando um terminal de sistema operacional.
-
-R10: Foi implementado um interpretador de comandos com tratamento de erros para comandos inválidos e suporte a opções iniciadas por -.
+### Persistência e Interface (I/O)
+- Persistência de Dados: Implementação de persistência via MIPS Syscalls para manipulação de arquivos, garantindo o salvamento e carregamento do estado da aplicação.
+- Interface de Linha de Comando (CLI): Desenvolvimento de um terminal interativo baseado em polling de strings terminadas em \n.
+- Shell Customizado: Implementação de um banner dinâmico e interpretador de comandos com suporte a argumentos (flags iniciadas por -) e tratamento de erros sintáticos.
 
 ##  Estrutura do Repositório
 O projeto está organizado da seguinte forma:
